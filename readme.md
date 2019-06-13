@@ -1,10 +1,11 @@
 # Description
 pab(python auto build) 是一个自动化构建引擎，实现在自动编译各大开源项目的功能
-计划支持的项目：ffmpeg, ogre, skia
-计划支持的构建OS：Windows(10), Linux(Ubuntu), MacOSX(10.13+)
+support projects：ffmpeg, ogre, skia, tensorflow
+support Host OS：Windows(10), Linux(Ubuntu 18.04), MacOSX(10.13+)
+support Target OS：Windows(7+), Linux(Ubuntu 18.04), MacOSX(10.13+), iOS, Android
 
 # Features
-* 构建失败时给出建议
+* suggestion on build fail
 * 构建流程支持交互模式，失败时可以暂停整个流程，解决后可以继续执行
 * 构建流程支持并行模式，尽可能快的执行，但失败时直接退出，无法继续执行
 

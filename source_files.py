@@ -4,7 +4,7 @@ import os
 import json
 
 class SourceFiles:
-    def __init__(self, args):
+    def __init__(self, src, workspace):
         self.ext_filter = [
                 '.c', '.cc', '.cpp', '.cxx',
                 '.asm', '.S', # assemble
@@ -14,8 +14,8 @@ class SourceFiles:
         self.files = {}
         for ext in self.ext_filter:
             self.files[ext] = []
-        self.rootSrc = os.path.realpath(args['src'])
-        self.rootWorkspace = os.path.realpath(args.get('workspace', './workspace'))
+        self.rootSrc = os.path.realpath(src)
+        self.rootWorkspace = os.path.realpath(workspace)
         ws_file = os.path.join(self.rootWorkspace, 'ws.json')
         if not os.path.exists(self.rootWorkspace):
             os.makedirs(self.rootWorkspace)
@@ -34,7 +34,7 @@ class SourceFiles:
             cnt = len(files)
             total_files += cnt
             print('{:>10s}:{}'.format(ext, cnt))
-        print('{:>10s}:{}',format('totally', total_files))
+        print('{:>10s}:{}'.format('totally', total_files))
         
         with open(ws_file, 'w', encoding='utf-8') as f:
             json.dump(self.files, f, indent=4)
