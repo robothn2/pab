@@ -6,7 +6,8 @@ support Target OS：Windows(7+), Linux(Ubuntu 18.04), MacOSX(10.13+), iOS, Andro
 # Usage
 import pab
 builder = pab.Builder('d:/lib/ffmpeg', 'd:/lib/ffmpeg/build')
-toolchain = pab.plugin.NDK(path='d:/lib/android-ndk-r14b',  platform=21, arch='aarch64', cpu='arm64-v8a', compiler='gcc')
+toolchain = pab.Toolchain()
+toolchain.add_plugin(pab.plugins.NDK(path='d:/lib/android-ndk-r14b', platform=21, arch='aarch64', cpu='arm64-v8a', compiler='gcc'))
 builder.build(toolchain)
 
 # Features

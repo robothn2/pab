@@ -16,6 +16,7 @@ class SourceFiles:
             self.files[ext] = []
         self.rootSrc = os.path.realpath(src)
         self.rootWorkspace = os.path.realpath(workspace)
+        self.rootObj = os.path.join(self.rootWorkspace, 'obj')
         ws_file = os.path.join(self.rootWorkspace, 'ws.json')
         if not os.path.exists(self.rootWorkspace):
             os.makedirs(self.rootWorkspace)
