@@ -2,18 +2,14 @@
 
 import os
 import json
+from .file_dispatcher import FileDispatcher
 
 class SourceFiles:
     def __init__(self, src, workspace):
-        self.ext_filter = [
-                '.c', '.cc', '.cpp', '.cxx',
-                '.asm', '.S', # assemble
-                '.rc', # VS resource
-                '.m', '.mm', # xcode
-                ]
+        self.dispatcher = FileDispatcher()
         self.files = {}
-        for ext in self.ext_filter:
-            self.files[ext] = []
+        for _,cat in self.dispatcher.items():
+            self.files[cat] = []
         self.rootSrc = os.path.realpath(src)
         self.rootWorkspace = os.path.realpath(workspace)
         self.rootObj = os.path.join(self.rootWorkspace, 'obj')
@@ -27,16 +23,16 @@ class SourceFiles:
             os.makedirs(self.rootObj)
         
         total_files = 0
-        for ext, files in self.files.items():
+        for files in self.files.values():
             total_files += len(files)
         if total_files == 0:
             self._search_folder(self.rootSrc)
 
         total_files = 0
-        for (ext, files) in self.files.items():
+        for (cat, files) in self.files.items():
             cnt = len(files)
             total_files += cnt
-            print('{:>10s}:{}'.format(ext, cnt))
+            print('{:>10s}:{}'.format(cat, cnt))
         print('{:>10s}:{}'.format('totally', total_files))
         
         with open(ws_file, 'w', encoding='utf-8') as f:
@@ -56,5 +52,6 @@ class SourceFiles:
 
     def _add_source_file(self, fullpath, file_name):
         _, ext = os.path.splitext(file_name)
-        if ext in self.ext_filter:
-            self.files[ext].append(fullpath[len(self.rootSrc)+1:])
+        cat = self.dispatcher.getCat(ext)
+        if cat:
+            self.files[cat].append(fullpath[len(self.rootSrc)+1:])

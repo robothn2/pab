@@ -2,6 +2,7 @@
 
 import os
 import re
+from pab.compiler.gcc import GCC
 
 class NDK:
     def __init__(self, **kwargs):
@@ -28,13 +29,17 @@ class NDK:
                                     'android-{}'.format(kwargs.get('platform', 9)),
                                     'arch-{}'.format(kwargs.get('arch', 'arm'))) # android-ndk-r14b/platforms/android-9/arch-arm
         # todo: abi='arm64-v8a', compiler='gcc'
+        self.handlers = {
+                'link': [
+                    ('compositor', 'sysroot', self.sysroot),
+                    ('compositor', 'linkOutput', lambda kwargs: kwargs.get('dst')),
+                    ],
+                }
         
-    def _register_all(self, toolchain):
-        toolchain.registerCommand('link', lambda path: ['-I', path])
-        self.cmds['cc'] = os.path.join(self.rootBin, r'arm-linux-androideabi-gcc')
-        self.cmds['cxx'] = os.path.join(self.rootBin, r'arm-linux-androideabi-g++')
-        self.cmds['link'] = os.path.join(self.rootBin, r'arm-linux-androideabi-ld')
+    def registerAll(self, toolchain):
+        toolchain.registerCommand('link', os.path.join(self.rootBin, r'arm-linux-androideabi-ld'))
+        toolchain.addPlugin(GCC(path=self.rootBin, name='arm-linux-androideabi-4.9'))
 
-    def handleCompileFile(self, config, src, dst):
-        return [('compositor', 'sysroot', self.sysroot)]
+    def handleFile(self, config, cat, src, dst):
+        return self.handlers[cat]
     

@@ -5,49 +5,61 @@ import subprocess
 class Toolchain:
     def __init__(self):
         self.plugins = []
-        self.argCompositors = {}
+        self.registerCompositors = {}
+        self.registerCmds = {}
 
     def addPlugin(self, plugin):
         self.plugins.append(plugin)
         plugin.registerAll(self)
     
-    def registerArgCompositor(self, config, method, args):
-        if hasattr(self.argCompositors, method):
+    def registerCommand(self, cmd_name, cmd_exec_path):
+        if hasattr(self.registerCmds, cmd_name):
             raise('Found duplicate ArgCompositor')
-
-    def nativeCall(self, cmd, args):
-        print(args)
-        subprocess.check_call(args)
-
-    def compileFile(self, src, dst):
-        print(src, '->', dst)
-        cmds = []
-        for plugin in self.plugins:
-            front, args = plugin.handleFile('cc', src)
-            if isinstance(args, list):
-                if front:
-                    cmds.insert(0, args)
-                else:
-                    cmds.append(args)
+        self.registerCmds[cmd_name] = cmd_exec_path
         
-        cmds += ['-o', dst, '-c', src]
-        self.nativeCall('cc', cmds)
-    
-    def archiveFile(self, src, dst):
+    def registerArgCompositor(self, config, method, func):
+        if hasattr(self.registerCompositors, method):
+            raise('Found duplicate ArgCompositor')
+        self.registerCompositors[method] = func
+
+    def dumpInfo(self):
         pass
     
-    def linkFiles(self, src, dst):
-        cmds = ['-static']
-        #cmds += ['-L', lib_path]
-        #cmds += [f'-l{lib_name}']
-        if isinstance(src, list):
-            cmds += src
-        else:
-            cmds.append(src)
-        
-        cmds.append(r'--sysroot=D:/lib/android-ndk-r14b/platforms/android-9/arch-arm')
-        cmds.append(['-o', dst])
-        
+    def nativeCall(self, cmds):
         print(cmds)
-        self.nativeCall('link', cmds)
-    
+        subprocess.check_call(cmds)
+
+    def processFile(self, config, cat, src, dst):
+        print(cat, src, '->', dst)
+        if not cat in self.registerCmds:
+            return
+        
+        cmds = [self.registerCmds[cat]]
+        for plugin in self.plugins:
+            ret = plugin.handleFile(config, cat, src, dst)
+            print(plugin.name, 'handleFile() returns', ret)
+            if isinstance(ret, list):
+                for t in ret:
+                    cmds.append(self._compositorArgs(t))
+            elif isinstance(ret, tuple):
+                cmds.append(self._compositorArgs(ret))
+            else:
+                print('Unsupport return value:', ret)
+        
+        self.nativeCall(cmds)
+        
+    def _compositorArgs(self, args):
+        if not isinstance(args, tuple) or len(args) <= 2:
+            return
+        if args[0] == 'compositor':
+            func = self.registerCompositors.get(args[0])
+            if not func:
+                return
+            if isinstance(func, str):
+                return func
+            if callable(func):
+                return func(args[2] if len(args) == 3 else args[2:])
+        elif args[0] == 'args':
+            return args[1:]
+        print('Unsupport compositor:', args)
+        

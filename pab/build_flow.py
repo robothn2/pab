@@ -11,12 +11,12 @@ class BuildFlow:
         print(' obj:', source_files.rootObj)
         print('files:', source_files.files)
         objs = []
-        for ext,files in source_files.files.items():
+        for cat,files in source_files.files.items():
             for file in files:
                 src = os.path.join(source_files.rootSrc, file)
                 obj = os.path.join(source_files.rootObj, file) + '.o'
                 
-                toolchain.compileFile(src, obj)
+                toolchain.processFile(cat, src, obj)
                 objs.append(obj)
         
         toolchain.linkFiles(objs, os.path.join(source_files.rootObj, 'hello'))
