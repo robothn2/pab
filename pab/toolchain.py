@@ -7,13 +7,12 @@ class Toolchain:
         pass
 
     def nativeCall(self, cmd, args):
+        args.insert(0, r'D:/lib/android-ndk-r14b/toolchains/arm-linux-androideabi-4.9/prebuilt/windows-x86_64/bin/arm-linux-androideabi-gcc.exe')
         print(args)
-        args.insert(0, r'D:\lib\android-ndk-r14b\toolchains\arm-linux-androideabi-4.9\prebuilt\windows-x86_64\bin\arm-linux-androideabi-gcc.exe')
-        args.insert(1, '-I')
-        args.insert(2, r'D:\lib\android-ndk-r14b\platforms\android-21\arch-arm\usr\include')
         subprocess.check_call(args)
 
     def compileFile(self, src, dst):
+        print(src, '->', dst)
         cmds = [#'-O3', '-Wall',
                 #'-std=c99',
                 #'-ffast-math', '-pipe',
@@ -22,20 +21,24 @@ class Toolchain:
                 #'-DANDROID',
                 #'-DNDEBUG'
                 ]
-        cmds += ['-c', '-o', dst, src]
+        cmds.append(r'--sysroot=D:/lib/android-ndk-r14b/platforms/android-9/arch-arm')
+        cmds += ['-o', dst, '-c', src]
         self.nativeCall('cc', cmds)
     
     def archiveFile(self, src, dst):
         pass
     
     def linkFiles(self, src, dst):
-        cmds = ['gcc', '-static']
+        cmds = ['-static']
         #cmds += ['-L', lib_path]
         #cmds += [f'-l{lib_name}']
         if isinstance(src, list):
             cmds += src
         else:
             cmds.append(src)
+        
+        cmds.append(r'--sysroot=D:/lib/android-ndk-r14b/platforms/android-9/arch-arm')
+        cmds.append(['-o', dst])
         
         print(cmds)
         self.nativeCall('link', cmds)

@@ -23,6 +23,8 @@ class SourceFiles:
         elif os.path.exists(ws_file):
             with open(ws_file, 'r', encoding='utf-8') as f:
                 self.files = json.load(f)
+        if not os.path.exists(self.rootObj):
+            os.makedirs(self.rootObj)
         
         total_files = 0
         for ext, files in self.files.items():
