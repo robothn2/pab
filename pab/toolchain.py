@@ -4,24 +4,32 @@ import subprocess
 
 class Toolchain:
     def __init__(self):
-        pass
+        self.plugins = []
+        self.argCompositors = {}
+
+    def addPlugin(self, plugin):
+        self.plugins.append(plugin)
+        plugin.registerAll(self)
+    
+    def registerArgCompositor(self, config, method, args):
+        if hasattr(self.argCompositors, method):
+            raise('Found duplicate ArgCompositor')
 
     def nativeCall(self, cmd, args):
-        args.insert(0, r'D:/lib/android-ndk-r14b/toolchains/arm-linux-androideabi-4.9/prebuilt/windows-x86_64/bin/arm-linux-androideabi-gcc.exe')
         print(args)
         subprocess.check_call(args)
 
     def compileFile(self, src, dst):
         print(src, '->', dst)
-        cmds = [#'-O3', '-Wall',
-                #'-std=c99',
-                #'-ffast-math', '-pipe',
-                #'-fstrict-aliasing', '-Werror=strict-aliasing',
-                #'-Wno-psabi', '-Wa,--noexecstack',
-                #'-DANDROID',
-                #'-DNDEBUG'
-                ]
-        cmds.append(r'--sysroot=D:/lib/android-ndk-r14b/platforms/android-9/arch-arm')
+        cmds = []
+        for plugin in self.plugins:
+            front, args = plugin.handleFile('cc', src)
+            if isinstance(args, list):
+                if front:
+                    cmds.insert(0, args)
+                else:
+                    cmds.append(args)
+        
         cmds += ['-o', dst, '-c', src]
         self.nativeCall('cc', cmds)
     
