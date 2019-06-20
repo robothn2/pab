@@ -22,4 +22,4 @@ class BuildFlow:
                 toolchain.doCommand(cmd, config=config, src=src, dst=obj)
                 objs.append(obj)
         
-        toolchain.doCommand('link', config=config, src=objs, dst=os.path.join(source_files.rootObj, 'hello'))
+        toolchain.doCommand('link', config=config, src=objs, dst=os.path.join(source_files.rootWorkspace, 'hello'))

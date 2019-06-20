@@ -4,10 +4,15 @@ support Host OS：Windows(10), Linux(Ubuntu 18.04), MacOSX(10.13+)
 support Target OS：Windows(7+), Linux(Ubuntu 18.04), MacOSX(10.13+), iOS, Android
 
 # Usage
-import pab
-builder = pab.Builder('d:/lib/ffmpeg', 'd:/lib/ffmpeg/build')
-toolchain = pab.Toolchain()
-toolchain.add_plugin(pab.plugins.NDK(path='d:/lib/android-ndk-r14b', platform=21, arch='aarch64', cpu='arm64-v8a', compiler='gcc'))
+from pab.builder import Builder
+from pab.toolchain import Toolchain
+from pab.android_ndk.ndk import NDK
+
+ndk = NDK(path='d:/lib/android-ndk-r14b',
+          toolchain='arm-linux-androideabi-4.9',
+          platform=12, arch='arm', abi='armeabi', compiler='gcc')
+toolchain = Toolchain(ndk)
+builder = Builder('test/hello', 'test/hello/build')
 builder.build(toolchain)
 
 # Features
@@ -52,20 +57,18 @@ builder.build(toolchain)
 >> ar      archive 文件管理
 >> link    提供链接功能
 * 支持将超多 .o 文件分批链接
-* 支持依据相同函数名来区分不同指令集
-* 链接失败时给出建议
+* 自动链接不同指令集的相同函数名
 >> sdk     提供sdk制作功能
 * sdk public header + static/dynamic library(.a, .so)
 * framework xcode .framework
 > command_queue 将 command 翻译成一条或多条 toolchain 命令并执行
->> toolchain 编译器命令封装
-* 支持操作：cc, cxx, asm, rc, ar, lipo, ld, strip, ranlib, addr, ...
+>> toolchain/compiler 命令封装
+* cc, cxx, as, rc, ar, lipo, ld, strip, ranlib, addr, ...
 >> system 操作系统命令封装
 * 
 > utils
 * SDK/package 搜索：在本目录、系统环境PATH内搜索
 * 头文件搜索
-* 
 
 # Extendable
 

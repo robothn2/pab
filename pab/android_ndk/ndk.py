@@ -25,24 +25,20 @@ class NDK:
             raise Exception('Ndk toolchain name not exist: %s' % prebuilt)
 
         self.rootBin = os.path.join(prebuilt, os.listdir(prebuilt)[0], 'bin') # linux-x86_64/bin or windows-x86_64/bin
-        self.sysroot = os.path.join(self.root, 'platforms',
-                                    'android-{}'.format(kwargs.get('platform', 9)),
+        rootPlatform = os.path.join(self.root, 'platforms',
+                                    'android-{}'.format(kwargs.get('platform', 9)))
+        if not os.path.exists(rootPlatform):
+            raise Exception('Ndk platform not exist: %s' % rootPlatform)
+        
+        self.sysroot = os.path.join(rootPlatform,
                                     'arch-{}'.format(kwargs.get('arch', 'arm'))) # android-ndk-r14b/platforms/android-9/arch-arm
         # todo: abi='arm64-v8a', compiler='gcc'
         
     def registerAll(self, toolchain):
-        toolchain.registerCommand(self, 'link', os.path.join(self.rootBin, r'arm-linux-androideabi-ld'))
-        toolchain.registerCommandFilter(self, 'link',
-            [
-                ('compositor', 'linkOutput', lambda args: args.get('dst') if isinstance(args, dict) else args),
-                self._filterMakeObjList,
-            ])
-        toolchain.registerCommandFilter(self, 'link', self._filterMakeObjList)
-
         toolchain.registerCommandFilter(self, ['cc', 'cxx', 'link'], ('compositor', 'sysroot', self.sysroot))
+        toolchain.registerCommandFilter(self, 'link', [
+                    #('args', '-static'), # Android use static library
+                ])
 
-        toolchain.registerPlugin(GCC(path=self.rootBin, name='arm-linux-androideabi-4.9'))
-    
-    @staticmethod
-    def _filterMakeObjList(args):
-        return args.get('src', [])
+        # todo: search 
+        toolchain.registerPlugin(GCC(prefix=os.path.join(self.rootBin, 'arm-linux-androideabi-'), postfix='.exe'))

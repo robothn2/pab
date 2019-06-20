@@ -77,9 +77,10 @@ class Toolchain:
         print('=toolchain dump end')
     
     def _execCommand(self, cmd_name, cmds):
-        print('=', cmd_name, cmds)
-        out = subprocess.getoutput(cmds)
-        print(out)
+        exitcode,output = subprocess.getstatusoutput(cmds)
+        if exitcode != 0:
+            print(subprocess.list2cmdline(cmds))
+            print(output)
 
     def doCommand(self, cmd_name, **kwargs):
         if not cmd_name in self.registerCmds:
@@ -98,6 +99,7 @@ class Toolchain:
             elif isinstance(ret, str):
                 cmdline.append(ret)
         
+        print('=', cmd_name, kwargs.get('src'), '->', kwargs.get('dst'))
         self._execCommand(cmd_name, cmdline)
         
     def _compositorArgs(self, cmd_filter, kwargs):
