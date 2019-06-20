@@ -77,6 +77,9 @@ class Toolchain:
         print('=toolchain dump end')
     
     def _execCommand(self, cmd_name, cmds):
+        #env = os.environ.copy()
+        #env['path'].insert(0, '')
+        #output = subprocess.check_output(cmds, env=env)
         exitcode,output = subprocess.getstatusoutput(cmds)
         if exitcode != 0:
             print(subprocess.list2cmdline(cmds))
@@ -109,9 +112,9 @@ class Toolchain:
                     assert(len(cmd_filter) == 3)
                     compositor = self.registerCompositors.get(cmd_filter[1])
                     if callable(compositor):
-                        if isinstance(cmd_filter[2], str):
+                        if isinstance(cmd_filter[2], str): # support: ('compositor', 'sysroot', self.sysroot)
                             return compositor(cmd_filter[2], kwargs)
-                        if callable(cmd_filter[2]):
+                        if callable(cmd_filter[2]): # support: ('compositor', 'linkOutput', lambda args: args['dst'])
                             return compositor(cmd_filter[2](kwargs), kwargs)
                 elif cmd_filter[0] == 'args':
                     return cmd_filter[1:]
