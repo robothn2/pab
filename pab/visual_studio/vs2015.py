@@ -15,25 +15,41 @@ class VS2015:
         self.rootIncludes = [
                 r'C:\Program Files (x86)\Windows Kits\10\Include\10.0.10240.0\ucrt',
                 ]
-        # PATH:
-        #   C:\Program Files (x86)\Microsoft Visual Studio 14.0\Common7\IDE\CommonExtensions\Microsoft\TestWindow
+        # exe PATH:
         #   C:\Program Files (x86)\MSBuild\14.0\bin
-        #   C:\Program Files (x86)\Microsoft Visual Studio 14.0\Common7\IDE\
+        #       MSBuild.exe, vbc.exe
         #   C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\BIN\x86_amd64
         #   C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\BIN
+        #       cl.exe, lib.exe, link.exe, nmake.exe, dumpbin.exe
         #   C:\Program Files (x86)\Microsoft Visual Studio 14.0\Common7\Tools
-        #   C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319
-        #   C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\VCPackages
-        #   C:\Program Files (x86)\HTML Help Workshop
-        #   C:\Program Files (x86)\Microsoft Visual Studio 14.0\Team Tools\Performance Tools
-        #   C:\Program Files (x86)\Windows Kits\10\bin\x86
-        #   C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.6.1 Tools\
+        #       errlook.exe, guidgen.exe, spyxx.exe
+        #   C:\Program Files (x86)\Windows Kits\10\bin\10.0.17134.0\x86 || C:\Program Files (x86)\Windows Kits\8.1\bin\x86
+        #       fxc.exe, rc.exe, midl.exe
+        
+        # include path:
+        #   commdlg.h, d3d.h, d3d11.h, objbase.h, commctrl.h, 
+        #       C:\Program Files (x86)\Microsoft SDKs\Windows\v7.1A\Include
+        #       C:\Program Files (x86)\Windows Kits\8.1\Include\um
+        #       C:\Program Files (x86)\Windows Kits\10\Include\10.0.10150.0\ucrt
+        #   winnt.h, winsock2.h, 
+        #       C:\Program Files (x86)\Microsoft SDKs\Windows\v7.1A\Include
+        #       C:\Program Files (x86)\Windows Kits\8.1\Include\um
+        #       C:\Program Files (x86)\Windows Kits\10\Include\10.0.17134.0\um
+        
+        # lib path:
+        #   msvcrt.lib, libcmt.lib, msvcprt.lib, msvcurt.lib
+        #       C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\lib\amd64
+        #   kernel32.lib
+        #       C:\Program Files (x86)\Microsoft SDKs\Windows\v7.1A\Lib\x64   
+        #       C:\Program Files (x86)\Windows Kits\8.1\Lib\winv6.3\um\x64
+        #       C:\Program Files (x86)\Windows Kits\10\Lib\10.0.17134.0\um\x86
         
     def registerAll(self, toolchain):
         toolchain.registerCommand(self, 'cc', os.path.join(self.root, r'VC\bin\cl.exe'))
         toolchain.registerCommand(self, 'cxx', os.path.join(self.root, r'VC\bin\cl.exe'))
         #toolchain.registerCommand(self, 'as', self.prefix + 'as' + self.postfix)
         toolchain.registerCommand(self, 'link', os.path.join(self.root, r'VC\bin\link.exe'))
+        toolchain.registerCommand(self, 'fxc', os.path.join(self.root, r'VC\bin\link.exe'))
 
         #C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\amd64_x86\CL.exe /c /I"..\..\include" /Zi /nologo /W1 /WX- /Od /Oy- /D JSON_DLL /D WIN32 /D _WINDOWS /D _SILENCE_STDEXT_HASH_DEPRECATION_WARNINGS /D NDEBUG /D _USING_V110_SDK71_ /D _UNICODE /D UNICODE /Gm- /EHsc /MD /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"../../build/int/Publish2015/QYTest/" /Fd"../../build/int/Publish2015/QYTest/vc140.pdb" /Gd /TP /wd4819 /analyze- /errorReport:queue ..\..\src\QYTest\main.cpp ..\..\src\QYTest\stdafx.cpp
         toolchain.registerCommandFilter(self, ['cc', 'cxx'], [
@@ -44,6 +60,7 @@ class VS2015:
                              ),
                     ('args', '/nologo', '/c', '/W3', '/WX-', '/Od', '/Oy-',
                      '/Gd', '/TP', '/wd4819', '/analyze-', '/errorReport:queue'),
+                    ('compositor', 'includePath', r'C:\Program Files (x86)\Windows Kits\10\Include\10.0.10240.0\ucrt'),
                     self._filterMakeSrcDst,
                 ])
 
@@ -60,14 +77,14 @@ class VS2015:
                              'kernel32.lib', 'user32.lib', 'gdi32.lib', 'advapi32.lib', 'shell32.lib',
                              #'winspool.lib', 'comdlg32.lib', 'ole32.lib', 'oleaut32.lib', 'uuid.lib', 'odbc32.lib', 'odbccp32.lib',
                              ),
+                    ('compositor', 'libPath', r'C:\Program Files (x86)\Microsoft SDKs\Windows\v7.1A\Lib\x64'),
                     ('compositor', 'linkOutput', lambda args: args['dst']),
-                    ('compositor', 'includePath', r'C:\Program Files (x86)\Windows Kits\10\Include\10.0.10240.0\ucrt'),
                     self._filterMakeSrcDst,
                 ])
 
-        toolchain.registerArgCompositor(self, ['sysroot', 'includePath'], lambda path, args: f'I"{path}"')
+        toolchain.registerArgCompositor(self, ['sysroot', 'includePath'], lambda path, args: f'/I"{path}"')
         toolchain.registerArgCompositor(self, 'libPath', lambda path, args: '/LIBPATH:"{path}"')
-        toolchain.registerArgCompositor(self, 'lib', lambda path, args: f'-l{path}')
+        toolchain.registerArgCompositor(self, 'lib', lambda path, args: path)
         toolchain.registerArgCompositor(self, 'linkOutput', lambda path, args: f'/Fo"{path}"')
 
     def _filterMakeCompileDst(self, args):
