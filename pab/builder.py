@@ -12,4 +12,4 @@ class Builder:
 
     def build(self, toolchain):
         #self.config.append(configure)
-        self.flow.run(self.files, toolchain)
+        self.flow.run(self.config, self.files, toolchain)

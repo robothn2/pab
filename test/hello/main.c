@@ -1,4 +1,4 @@
-void pr();
+extern void pr();
 
 int main()
 {
