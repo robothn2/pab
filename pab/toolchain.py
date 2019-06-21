@@ -76,13 +76,14 @@ class Toolchain:
             print(arg, compositor)
         print('=toolchain dump end')
     
-    def _execCommand(self, cmd_name, cmds):
+    def _execCommand(self, cmd_name, cmds, appendixs):
         #env = os.environ.copy()
         #env['path'].insert(0, '')
         #output = subprocess.check_output(cmds, env=env)
-        exitcode,output = subprocess.getstatusoutput(cmds)
+        cmdline = subprocess.list2cmdline(cmds) + ' ' + ' '.join(appendixs)
+        exitcode,output = subprocess.getstatusoutput(cmdline)
         if exitcode != 0:
-            print(subprocess.list2cmdline(cmds))
+            print(cmdline)
             print(output)
 
     def doCommand(self, cmd_name, **kwargs):
@@ -90,20 +91,28 @@ class Toolchain:
             raise Exception('Unsupport Command:', cmd_name)
             return
         
+        appendixs = [] # collect args which including `"`
         cmdline = [self.registerCmds[cmd_name]] # executable
         cmd_filters = self.registerCmdFilters.get(cmd_name)
         for cmd_filter in cmd_filters:
             ret = self._compositorArgs(cmd_filter, kwargs)
+            if not ret:
+                continue # skip '', [], or ()
             #print('filter', cmd_filter, 'returns:', ret)
-            if isinstance(ret, list):
-                cmdline += ret
-            elif isinstance(ret, tuple):
-                cmdline += list(ret)
+            if isinstance(ret, list) or isinstance(ret, tuple):
+                for part in ret:
+                    if '"' in part:
+                        appendixs.append(part)
+                    else:
+                        cmdline.append(part)
             elif isinstance(ret, str):
-                cmdline.append(ret)
+                if '"' in ret:
+                    appendixs.append(ret)
+                else:
+                    cmdline.append(ret)
         
         print('=', cmd_name, kwargs.get('src'), '->', kwargs.get('dst'))
-        self._execCommand(cmd_name, cmdline)
+        self._execCommand(cmd_name, cmdline, appendixs)
         
     def _compositorArgs(self, cmd_filter, kwargs):
         if isinstance(cmd_filter, tuple):
@@ -112,10 +121,20 @@ class Toolchain:
                     assert(len(cmd_filter) == 3)
                     compositor = self.registerCompositors.get(cmd_filter[1])
                     if callable(compositor):
-                        if isinstance(cmd_filter[2], str): # support: ('compositor', 'sysroot', self.sysroot)
-                            return compositor(cmd_filter[2], kwargs)
-                        if callable(cmd_filter[2]): # support: ('compositor', 'linkOutput', lambda args: args['dst'])
-                            return compositor(cmd_filter[2](kwargs), kwargs)
+                        param = cmd_filter[2]
+                        if isinstance(param, str): # support: ('compositor', 'sysroot', self.sysroot)
+                            return compositor(param, kwargs)
+                        if isinstance(param, list) or isinstance(param, tuple): # support ('compositor', 'libPath', ['../lib', '../../lib'])
+                            ret = [] # combine all result for every element of param
+                            for p in param:
+                                result = compositor(p, kwargs)
+                                if isinstance(result, str):
+                                    ret.append(result)
+                                else:
+                                    ret += result
+                            return ret
+                        if callable(param): # support: ('compositor', 'linkOutput', lambda args: args['dst'])
+                            return compositor(param(kwargs), kwargs)
                 elif cmd_filter[0] == 'args':
                     return cmd_filter[1:]
         elif callable(cmd_filter):
