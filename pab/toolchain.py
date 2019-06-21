@@ -1,7 +1,5 @@
 #coding: utf-8
 
-import subprocess
-import logging
 from ._internal.command import Command
 
 class Toolchain:
@@ -14,6 +12,7 @@ class Toolchain:
             self.registerPlugin(plugin)
 
     def registerPlugin(self, plugin):
+        print('Register plugin:', plugin)
         self.plugins.append(plugin)
         plugin.registerAll(self)
     
@@ -83,5 +82,5 @@ class Toolchain:
             return
         
         cmd = Command(name=cmd_name, executable=self.registerCmds[cmd_name])
-        cmd.execute(filters=self.registerCmdFilters, compositors=self.registerCompositors, **kwargs)
+        cmd.execute(cmd=cmd_name, filters=self.registerCmdFilters, compositors=self.registerCompositors, **kwargs)
         

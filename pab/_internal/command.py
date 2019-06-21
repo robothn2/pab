@@ -1,7 +1,6 @@
 #coding: utf-8
 
 import subprocess
-import os
 
 class Command:
     def __init__(self, **kwargs):
@@ -23,12 +22,9 @@ class Command:
             self._compositorArgs(compositors, cmd_filter, kwargs)
             
         print('=', self.name, kwargs.get('src'), '->', kwargs.get('dst'))
-        self._execute()
 
-    def _execute(self):
-        #env = os.environ.copy()
-        #env['path'].insert(0, '')
-        #output = subprocess.check_output(cmds, env=env)
+        # using appendixs to avoid incorrect quote on cmd part which existing
+        #   double quote `"`
         cmdline = subprocess.list2cmdline(self.cmds) + ' ' + ' '.join(self.appendixs)
         exitcode,output = subprocess.getstatusoutput(cmdline)
         if exitcode != 0:
@@ -39,22 +35,26 @@ class Command:
         if isinstance(cmd_filter, tuple):
             if len(cmd_filter) >= 2:
                 if cmd_filter[0] == 'compositor':
-                    assert(len(cmd_filter) == 3)
                     compositor = compositors.get(cmd_filter[1])
-                    if callable(compositor):
-                        param = cmd_filter[2]
-                        if isinstance(param, str):
-                             # support: ('compositor', 'sysroot', self.sysroot)
-                            self._addCompositorResult(compositor(param, kwargs))
-                        elif isinstance(param, list) or isinstance(param, tuple):
-                             # support ('compositor', 'libPath', ['../lib', '../../lib'])
-                            for p in param:
-                                self._addCompositorResult(compositor(p, kwargs))
-                        elif callable(param):
-                            # support: ('compositor', 'linkOutput', lambda args: args['dst'])
-                            self._addCompositorResult(compositor(param(kwargs), kwargs))
+                    assert(callable(compositor))
+                    assert(len(cmd_filter) == 3)
+                    param = cmd_filter[2]
+                    if isinstance(param, str):
+                         # support: ('compositor', 'sysroot', self.sysroot)
+                        self._addCompositorResult(compositor(param, kwargs))
+                    elif isinstance(param, list) or isinstance(param, tuple):
+                         # support ('compositor', 'libPath', ['../lib', '../../lib'])
+                        for p in param:
+                            self._addCompositorResult(compositor(p, kwargs))
+                    elif callable(param):
+                        # support: ('compositor', 'linkOutput', lambda args: args['dst'])
+                        self._addCompositorResult(compositor(param(kwargs), kwargs))
+                    else:
+                        raise Exception('Invalid filter prefix:', cmd_filter)
+
                 elif cmd_filter[0] == 'args':
                     self._addCompositorResult(cmd_filter[1:])
+                    
                 else:
                     raise Exception('Invalid filter prefix:', cmd_filter)
         elif callable(cmd_filter):
