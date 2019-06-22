@@ -16,6 +16,9 @@ class Toolchain:
         self.plugins.append(plugin)
         plugin.registerAll(self)
     
+    def unregisterPlugin(self, plugin):
+        pass
+    
     '''
     Command 提供命令对应的可执行文件路径
     '''

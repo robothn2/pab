@@ -1,15 +1,20 @@
 #coding: utf-8
 
-from .source_files import SourceFiles
 from .config import Config
-from .build_flow import BuildFlow
 
 class Builder:
-    def __init__(self, src, workspace, **kwargs):
-        self.files = SourceFiles(src, workspace)
+    def __init__(self, **kwargs):
+        self.kwargs = kwargs
         self.config = Config(kwargs.get('config', {}))
-        self.flow = BuildFlow(kwargs.get('flow', {}))
 
-    def build(self, toolchain, **kwargs):
-        #self.config.append(configure)
-        self.flow.run(self.config, self.files, toolchain, kwargs)
+    def build(self, toolchain, targets, **kwargs):
+        if isinstance(targets, list):
+            for target in targets:
+                self._buildTarget(toolchain, target, kwargs)
+        else:
+            self._buildTarget(toolchain, targets, kwargs)
+
+    def _buildTarget(self, toolchain, target, args):
+        toolchain.registerPlugin(target)
+        target.build(self.config, toolchain, args)
+        toolchain.unregisterPlugin(target)

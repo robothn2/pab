@@ -39,7 +39,7 @@ class VS2015:
                              '/D', 'WIN32', '/D', '_WINDOWS',
                              '/D', '_UNICODE', '/D', 'UNICODE',
                              ),
-                    ('args', '/showIncludes'),
+                    #('args', '/showIncludes'),
                     ('compositor', 'includePath', os.path.join(self.root, r'VC\include')),
                     self._filterByConfig,
                 ])
