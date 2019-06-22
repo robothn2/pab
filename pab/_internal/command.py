@@ -20,7 +20,8 @@ class Command:
         self.cmds = [self.executable] # executable must be first element
         for cmd_filter in filters.get(self.name):
             self._compositorArgs(compositors, cmd_filter, kwargs)
-            
+        
+        dst = kwargs.get('dst')
         print('=', self.name, kwargs.get('src'), '->', kwargs.get('dst'))
 
         # using appendixs to avoid incorrect quote on cmd part which existing
@@ -30,6 +31,8 @@ class Command:
         if exitcode != 0:
             print(cmdline)
             print(output)
+            return None
+        return dst
     
     def _compositorArgs(self, compositors, cmd_filter, kwargs):
         if isinstance(cmd_filter, tuple):

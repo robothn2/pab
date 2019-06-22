@@ -3,11 +3,12 @@
 from .config import Config
 
 class Builder:
-    def __init__(self, **kwargs):
-        self.kwargs = kwargs
-        self.config = Config(kwargs.get('config', {}))
+    def __init__(self, **config):
+        self.config = Config(config)
 
     def build(self, toolchain, targets, **kwargs):
+        toolchain.registerPlugin(self.config)
+        
         if isinstance(targets, list):
             for target in targets:
                 self._buildTarget(toolchain, target, kwargs)

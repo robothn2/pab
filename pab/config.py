@@ -9,3 +9,11 @@ class Config:
     
     def get(self, memberName, defaultValue = None):
         return self.cfg.get(memberName, defaultValue)
+    
+    def registerAll(self, toolchain):
+        toolchain.registerSourceFileFilter(self, self._filter)
+        
+    def _filterPreprocessSourceFile(self, args):
+        # todo: update args['dst']
+        # todo: return False to reject file by config
+        return True

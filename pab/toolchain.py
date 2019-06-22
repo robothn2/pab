@@ -7,6 +7,7 @@ class Toolchain:
         self.registerCmds = {}
         self.registerCmdFilters = {}
         self.registerCompositors = {}
+        self.registerSourceFileFilters = []
         self.plugins = []
         for plugin in plugins:
             self.registerPlugin(plugin)
@@ -26,6 +27,14 @@ class Toolchain:
         if hasattr(self.registerCmds, cmd_name):
             raise Exception('Found duplicate ArgCompositor')
         self.registerCmds[cmd_name] = cmd_exec_path
+        
+    '''
+    Command 提供命令对应的可执行文件路径
+    '''
+    def registerSourceFileFilter(self, plugin, filter_func):
+        if not callable(filter_func):
+            raise Exception('Invalid SourceFileFilter')
+        self.registerSourceFileFilters.append(filter_func)
         
     '''
     CommandFilter 参与命令行参数构造
@@ -82,8 +91,12 @@ class Toolchain:
     def doCommand(self, cmd_name, **kwargs):
         if not cmd_name in self.registerCmds:
             raise Exception('Unsupport Command:', cmd_name)
-            return
+            return None
         
+        for file_filter in self.registerSourceFileFilters:
+            if not file_filter(kwargs):
+                return None # file reject by filter
+            
         cmd = Command(name=cmd_name, executable=self.registerCmds[cmd_name])
-        cmd.execute(cmd=cmd_name, filters=self.registerCmdFilters, compositors=self.registerCompositors, **kwargs)
+        return cmd.execute(cmd=cmd_name, filters=self.registerCmdFilters, compositors=self.registerCompositors, **kwargs)
         

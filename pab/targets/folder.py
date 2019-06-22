@@ -47,12 +47,13 @@ class FolderTarget:
         top = args.get('top', 0)
         for cmd,files in self.files.files.items():
             for file in files:
-                src = os.path.join(self.files.rootSrc, file)
-                obj = os.path.join(self.files.rootObj, file) + '.o'
-                
-                toolchain.doCommand(cmd, config=config, src=src, dst=obj)
-                objs.append(obj)
+                out = toolchain.doCommand(cmd, config=config,
+                                          src=os.path.join(self.files.rootSrc, file),
+                                          dst=os.path.join(self.files.rootObj, file) + '.o')
+                if not out:
+                    continue
+                objs.append(out)
                 if top and len(objs) >= top:
                     return # only process top count files
         
-        toolchain.doCommand('link', config=config, src=objs, dst=os.path.join(self.files.rootWorkspace, 'hello'))
+        toolchain.doCommand('link', config=config, src=objs, dst=os.path.join(self.files.rootWorkspace, self.target_name))
