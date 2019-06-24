@@ -66,7 +66,6 @@ class VS2015:
         toolchain.registerArgCompositor(self, ['sysroot', 'includePath'], self._makeIncludePath)
         toolchain.registerArgCompositor(self, 'libPath', self._makeLibraryPath)
         toolchain.registerArgCompositor(self, 'lib', lambda path, args: path)
-        #toolchain.registerArgCompositor(self, 'linkOutput', lambda path, args: f'/OUT:"{path}"')
         
     @staticmethod
     def _makeIncludePath(path, args = None):
@@ -80,41 +79,38 @@ class VS2015:
         config = args['config']
         cmd = args['cmd']
         
-        ret += ['/Gm-',  # 禁用最小重新生成
-                '/GS',   # 启用安全检查，检测堆栈缓冲区溢出
-                '/fp:precise',  # 浮点模型: 精度
-                '/Zc:wchar_t',  # treat wchar_t as internal type
-                '/Zc:forScope', # for variables only available in for loop
-                '/Zc:inline', # 编译器不再为未引用的代码和数据生成符号信息
-                '/W3', '/WX-', '/wd4819', # warnings
-                '/Od', # optimization level: /Od = disable, /O1, /O2, /O3
-                '/Oy-', # Omit frame pointer: /Oy- = disable
-                '/Gd', # default call: /Gd = __cdecl, /Gr = __fastcall, /Gz = __stdcall, /Gv = __vectorcall
-                #'/analyze-', '/errorReport:queue'
-                ]
-        if config.hasMember('debug'):
-            ret += ['/D', 'DEBUG', '/D', '_DEBUG']
-            ret.append('/MTd' if config.hasMember('crt_static') else '/MT') # Multithreaded static
-        else:
-            ret += ['/D', 'NDEBUG',
-                    '/EHsc', # enable c++ execption
+        if cmd in ['cc', 'cxx']:
+            ret += ['/Gm-',  # 禁用最小重新生成
+                    '/GS',   # 启用安全检查，检测堆栈缓冲区溢出
+                    '/fp:precise',  # 浮点模型: 精度
+                    '/Zc:wchar_t',  # treat wchar_t as internal type
+                    '/Zc:forScope', # for variables only available in for loop
+                    '/Zc:inline', # 编译器不再为未引用的代码和数据生成符号信息
+                    '/W3', '/WX-', '/wd4819', # warnings
+                    '/Od', # optimization level: /Od = disable, /O1, /O2, /O3
+                    '/Oy-', # Omit frame pointer: /Oy- = disable
+                    '/Gd', # default call: /Gd = __cdecl, /Gr = __fastcall, /Gz = __stdcall, /Gv = __vectorcall
+                    #'/analyze-', '/errorReport:queue'
                     ]
-            # runtime library linkage
-            ret.append('/MDd' if config.hasMember('crt_static') else '/MD') # Multithreaded DLL
-            
-        if cmd == 'cc':
-            ret.append('/TC')   # compile as C code
-        elif cmd == 'cxx':
-            ret += ['/D', '_SILENCE_STDEXT_HASH_DEPRECATION_WARNINGS']
-            ret.append('/TP')   # compile as C++ code
+            if config.hasMember('debug'):
+                ret += ['/D', 'DEBUG', '/D', '_DEBUG']
+                ret.append('/MTd' if config.hasMember('crt_static') else '/MT') # Multithreaded static
+            else:
+                ret += ['/D', 'NDEBUG',
+                        '/EHsc', # enable c++ execption
+                        ]
+                # runtime library linkage
+                ret.append('/MDd' if config.hasMember('crt_static') else '/MD') # Multithreaded DLL
+                
+            if cmd == 'cc':
+                ret.append('/TC')   # compile as C code
+            elif cmd == 'cxx':
+                ret += ['/D', '_SILENCE_STDEXT_HASH_DEPRECATION_WARNINGS']
+                ret.append('/TP')   # compile as C++ code
 
         # include path:
         #   stdio.h
         #       C:\Program Files (x86)\Windows Kits\10\Include\10.0.17763.0\ucrt
-        #       C:\Program Files (x86)\Windows Kits\10\Include\10.0.17134.0\ucrt
-        #       C:\Program Files (x86)\Windows Kits\10\Include\10.0.14393.0\ucrt
-        #       C:\Program Files (x86)\Windows Kits\10\Include\10.0.10586.0\ucrt
-        #       C:\Program Files (x86)\Windows Kits\10\Include\10.0.10240.0\ucrt
         #       C:\Program Files (x86)\Windows Kits\10\Include\10.0.10150.0\ucrt
         #       C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\include
         #       C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\include
@@ -146,20 +142,21 @@ class VS2015:
         target_platform_ver = config.get('target_platform_ver', '10.0.17763.0')
         if target_platform_ver == '7.1':
             if cmd == 'link':
-                ret += self._makeLibraryPath(r'C:\Program Files (x86)\Microsoft SDKs\Windows\v7.1A\Lib')
+                ret.append(self._makeLibraryPath(r'C:\Program Files (x86)\Microsoft SDKs\Windows\v7.1A\Lib'))
             elif cmd in ['cc', 'cxx']:
                 ret.extend(self._makeIncludePath(r'C:\Program Files (x86)\Microsoft SDKs\Windows\v7.1A\Include'))
         elif re.match(r'10\.\d+\.\d+\.\d+', target_platform_ver):
             if cmd == 'link':
-                ret += self._makeLibraryPath(fr'C:\Program Files (x86)\Windows Kits\10\Lib\{target_platform_ver}\ucrt\x86')
+                ret.append(self._makeLibraryPath(fr'C:\Program Files (x86)\Windows Kits\10\Lib\{target_platform_ver}\ucrt\x86'))
+                ret.append(self._makeLibraryPath(fr'C:\Program Files (x86)\Windows Kits\10\Lib\{target_platform_ver}\um\x86'))
             elif cmd in ['cc', 'cxx']:
                 ret.extend(self._makeIncludePath(fr'C:\Program Files (x86)\Windows Kits\10\Include\{target_platform_ver}\um'))
                 ret.extend(self._makeIncludePath(fr'C:\Program Files (x86)\Windows Kits\10\Include\{target_platform_ver}\ucrt'))
         else:
             # default windows sdk: 8.1
             if cmd == 'link':
-                ret += self._makeLibraryPath(r'C:\Program Files (x86)\Windows Kits\8.1\Lib\winv6.3\um\x86')
-                ret += self._makeLibraryPath(r'C:\Program Files (x86)\Microsoft SDKs\Windows\v7.1A\Lib')
+                ret.append(self._makeLibraryPath(r'C:\Program Files (x86)\Windows Kits\8.1\Lib\winv6.3\um\x86')) # only 'um' exist
+                ret.append(self._makeLibraryPath(r'C:\Program Files (x86)\Microsoft SDKs\Windows\v7.1A\Lib'))
             elif cmd in ['cc', 'cxx']:
                 ret.extend(self._makeIncludePath(r'C:\Program Files (x86)\Windows Kits\8.1\Include\um'))
                 ret.extend(self._makeIncludePath(r'C:\Program Files (x86)\Microsoft SDKs\Windows\v7.1A\Include'))
@@ -167,7 +164,15 @@ class VS2015:
 
         if 'dst' in args:
             if cmd == 'link':
-                ret.append('/OUT:"{}.exe"'.format(args['dst']))
+                part = args['dst']
+                t = args.get('targetType', 'executable')
+                if t == 'executable':
+                    part += '.exe'
+                elif t == 'sharedLib':
+                    part += '.dll'
+                else:
+                    part += '.lib'
+                ret.append(f'/OUT:"{part}"')
             elif cmd in ('cc', 'cxx'):
                 ret.append('/Fo:"{}"'.format(args['dst']))
             elif cmd == 'as':

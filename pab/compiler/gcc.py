@@ -34,9 +34,24 @@ class GCC:
 
     def _filterMakeSrcDst(self, args):
         ret = []
+        #config = args['config']
+        cmd = args['cmd']
+
         if 'dst' in args:
-            ret += ['-o', args['dst']]
-        
+            if cmd == 'link':
+                part = args['dst']
+                t = args.get('targetType', 'executable')
+                if t == 'sharedLib':
+                    part += '.so'
+                elif t == 'staticLib':
+                    part += '.a'
+                elif t == 'executable':
+                    pass
+
+                ret += ['-o', part]
+            else:
+                ret += ['-o', args['dst']]
+                
         if 'src' in args:
             src = args['src']
             if isinstance(src, str):

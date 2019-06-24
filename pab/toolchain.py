@@ -90,13 +90,16 @@ class Toolchain:
     
     def doCommand(self, cmd_name, **kwargs):
         if not cmd_name in self.registerCmds:
-            raise Exception('Unsupport Command:', cmd_name)
-            return None
+            return None # unsupport Command
         
-        for file_filter in self.registerSourceFileFilters:
-            if not file_filter(kwargs):
-                return None # file reject by filter
-            
+        if cmd_name != 'link':
+            for file_filter in self.registerSourceFileFilters:
+                ret, reason = file_filter(kwargs)
+                if not ret:
+                    print(' reject by SourceFileFilter:', reason)
+                    return None # file reject by filter
+        
+        print('=', cmd_name, kwargs.get('dst'))
         cmd = Command(name=cmd_name, executable=self.registerCmds[cmd_name])
         return cmd.execute(cmd=cmd_name, filters=self.registerCmdFilters, compositors=self.registerCompositors, **kwargs)
         

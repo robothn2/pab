@@ -22,7 +22,6 @@ class Command:
             self._compositorArgs(compositors, cmd_filter, kwargs)
         
         dst = kwargs.get('dst')
-        print('=', self.name, kwargs.get('src'), '->', kwargs.get('dst'))
 
         # using appendixs to avoid incorrect quote on cmd part which existing
         #   double quote `"`
@@ -39,7 +38,8 @@ class Command:
             if len(cmd_filter) >= 2:
                 if cmd_filter[0] == 'compositor':
                     compositor = compositors.get(cmd_filter[1])
-                    assert(callable(compositor))
+                    if not callable(compositor):
+                        raise Exception("Unhandled compositor name:", cmd_filter)
                     assert(len(cmd_filter) == 3)
                     param = cmd_filter[2]
                     if isinstance(param, str):
