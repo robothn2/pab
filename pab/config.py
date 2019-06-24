@@ -1,18 +1,26 @@
 #coding: utf-8
 import os
 from .archs import Archs
+from .cpus import Cpus
 
 class Config:
     def __init__(self, args):
         self.cfg = args
         self.archs = Archs()
-        self.arch = self.archs.get(self.cfg['arch'])
+        self._arch = self.archs.get(args['arch'])
+        self.cpus = Cpus()
+        self._cpu = self.archs.get(args['cpu'])
 
     def hasMember(self, memberName):
         return memberName in self.cfg
     
     def get(self, memberName, defaultValue = None):
         return self.cfg.get(memberName, defaultValue)
+    
+    def getArch(self):
+        return self._arch
+    def getCpu(self):
+        return self._cpu
     
     def registerAll(self, toolchain):
         toolchain.registerSourceFileFilter(self, self._filterSourceFile)
@@ -21,11 +29,11 @@ class Config:
         # todo: update args['dst']
 
         src = args['src']
-        parent, name = os.path.split(src)
-        parent_dir_name = os.path.dirname(parent)
-        arch = self.archs.get(parent_dir_name)
-        if arch and arch != self.arch:
-            return False, 'mismatched arch subfolder'
+        p, n = os.path.split(src)
+        pname = os.path.basename(p)
+        arch = self.archs.get(pname)
+        if arch and arch != self._arch:
+            return False, 'mismatched arch subfolder, expected {}, parsed {}'.format(self._arch, arch)
             
         _, ext = os.path.splitext(src)
         return True, None

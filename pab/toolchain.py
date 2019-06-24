@@ -96,7 +96,7 @@ class Toolchain:
             for file_filter in self.registerSourceFileFilters:
                 ret, reason = file_filter(kwargs)
                 if not ret:
-                    print(' reject by SourceFileFilter:', reason)
+                    print('*', cmd_name, kwargs['src'], 'rejected:', reason)
                     return None # file reject by filter
         
         print('=', cmd_name, kwargs.get('dst'))

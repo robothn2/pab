@@ -1,21 +1,24 @@
 #coding: utf-8
 
 from .config import Config
+from .toolchain import Toolchain
 
 class Builder:
-    def __init__(self, **config):
+    def __init__(self, compiler, **config):
         self.config = Config(config)
+        compiler.applyConfig(self.config)
+        self.toolchain = Toolchain(compiler)
 
-    def build(self, toolchain, targets, **kwargs):
-        toolchain.registerPlugin(self.config)
+    def build(self, targets, **kwargs):
+        self.toolchain.registerPlugin(self.config)
         
         if isinstance(targets, list):
             for target in targets:
-                self._buildTarget(toolchain, target, kwargs)
+                self._buildTarget(target, kwargs)
         else:
-            self._buildTarget(toolchain, targets, kwargs)
+            self._buildTarget(targets, kwargs)
 
-    def _buildTarget(self, toolchain, target, args):
-        toolchain.registerPlugin(target)
-        target.build(self.config, toolchain, args)
-        toolchain.unregisterPlugin(target)
+    def _buildTarget(self, target, args):
+        self.toolchain.registerPlugin(target)
+        target.build(self.config, self.toolchain, args)
+        self.toolchain.unregisterPlugin(target)

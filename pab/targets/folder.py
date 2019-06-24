@@ -57,7 +57,8 @@ class FolderTarget:
                 if out:
                     objs.append(out)
         
-        toolchain.doCommand('link',
+        if len(objs) > 0:
+            toolchain.doCommand('link',
                             config=config, src=objs, dst=os.path.join(self.files.rootWorkspace, self.targetName), # args from Target.build
                             **self.kwargs) # args from Target initialize
         

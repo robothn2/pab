@@ -20,6 +20,6 @@ class Archs:
                 for arch in archs:
                     self.archsMap[arch] = archs[0]
 
-    def get(self, memberName, defaultValue = None):
-        return self.archsMap.get(memberName, defaultValue)
+    def get(self, memberName):
+        return self.archsMap.get(memberName, None)
     
