@@ -45,6 +45,16 @@ class GCC:
         config = args['config']
         cmd = args['cmd']
 
+        '''
+        # compile
+        gcc -c hello.c
+        # link to static lib
+        ar -rcs libhello.a hello.o
+        gcc -o hello_static main.c -L. -lhello 
+        # link to dynamic lib
+        gcc -shared -fpic -o libhello.so hello.o
+        gcc -o hello main.c libhello.so
+        '''
         if 'dst' in args:
             dst = args['dst']
             if cmd == 'ar':
@@ -52,13 +62,15 @@ class GCC:
                 ret.append(dst)
             else:
                 if cmd == 'link':
-                    dst += config.targetOS.getTargetPostfix(args.get('targetType'))
+                    targetType = args['targetType']
+                    dst += config.targetOS.getTargetPostfix(targetType)
                     ret += ['-o', dst]
+                    if targetType == 'sharedLib':
+                        ret += ['-shared', '-fpic']
                 else:
                     ret += ['-o', dst]
             args['dst'] = dst
-                
-                
+
         if 'src' in args:
             src = args['src']
             if isinstance(src, str):

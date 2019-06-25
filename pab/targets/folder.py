@@ -62,13 +62,11 @@ class FolderTarget:
         if len(objs) == 0:
             return
         
-        lib = toolchain.doCommand('ar',
+        if self.targetType == 'staticLib':
+            toolchain.doCommand('ar',
                         config=config, src=objs, dst=os.path.join(self.files.rootWorkspace, self.targetName), # args from Target.build
                         **self.kwargs) # args from Target initialize
-        
-        if self.targetType != 'staticLib':
+        else:
             toolchain.doCommand('link',
-                        config=config, src=lib, dst=os.path.join(self.files.rootWorkspace, self.targetName),
+                        config=config, src=objs, dst=os.path.join(self.files.rootWorkspace, self.targetName),
                         **self.kwargs)
-            
-        
