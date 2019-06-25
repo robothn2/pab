@@ -31,7 +31,6 @@ class VS2015:
         toolchain.registerCommand(self, 'cxx', os.path.join(self.root, r'VC\bin\cl.exe'))
         #toolchain.registerCommand(self, 'as', self.prefix + 'as' + self.postfix)
         toolchain.registerCommand(self, 'link', os.path.join(self.root, r'VC\bin\link.exe'))
-        toolchain.registerCommand(self, 'fxc', os.path.join(self.root, r'VC\bin\link.exe'))
 
         #C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\amd64_x86\CL.exe /c /I"..\..\include" /Zi /nologo /W1 /WX- /Od /Oy- /D JSON_DLL /D WIN32 /D _WINDOWS /D _SILENCE_STDEXT_HASH_DEPRECATION_WARNINGS /D NDEBUG /D _USING_V110_SDK71_ /D _UNICODE /D UNICODE /Gm- /EHsc /MD /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"../../build/int/Publish2015/QYTest/" /Fd"../../build/int/Publish2015/QYTest/vc140.pdb" /Gd /TP /wd4819 /analyze- /errorReport:queue ..\..\src\QYTest\main.cpp ..\..\src\QYTest\stdafx.cpp
         toolchain.registerCommandFilter(self, ['cc', 'cxx'], [

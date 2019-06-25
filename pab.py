@@ -15,6 +15,6 @@ if __name__ == '__main__':
                           rootBuild='d:/lib/ffmpeg/build/libavutil',
                           targetType='sharedLib', # 'executable', 'staticLib', 'sharedLib'
                           includePath='d:/lib/ffmpeg',
-                          excludeFiles=['filter_list.c'])
+                          excludeFiles=['filter_list.c', 'tests'])
     builder.build(target, top=0)
     
