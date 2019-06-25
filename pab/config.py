@@ -2,6 +2,7 @@
 import os
 from .archs import Archs
 from .cpus import Cpus
+from ._internal.os import OS
 
 class Config:
     def __init__(self, args):
@@ -10,6 +11,8 @@ class Config:
         self._arch = self.archs.get(args['arch'])
         self.cpus = Cpus()
         self._cpu = self.archs.get(args['cpu'])
+        self.hostOS = OS()
+        self.targetOS = OS(**args)
 
     def hasMember(self, memberName):
         return memberName in self.cfg
@@ -21,6 +24,8 @@ class Config:
         return self._arch
     def getCpu(self):
         return self._cpu
+    def getTmpFile(self):
+        return 
     
     def registerAll(self, toolchain):
         toolchain.registerSourceFileFilter(self, self._filterSourceFile)
@@ -35,5 +40,6 @@ class Config:
         if arch and arch != self._arch:
             return False, 'mismatched arch subfolder, expected {}, parsed {}'.format(self._arch, arch)
             
-        _, ext = os.path.splitext(src)
+        # todo: check file name
+        #_, ext = os.path.splitext(src)
         return True, None

@@ -10,7 +10,7 @@ class NDK:
         self.root = kwargs.get('path', '')
         if not self.root or not os.path.exists(self.root):
             for path in os.environ['path']:
-                if not re.match(r'android-ndk-r\d{1,3}\w', os.path.basename(path)):
+                if not re.match(r'android-ndk-r\d{1,3}\w?', os.path.basename(path)):
                     continue
                 if not os.path.exists(os.path.join(path, 'toolchains')):
                     continue
@@ -41,6 +41,7 @@ class NDK:
             toolchain_name = 'x86_64-4.9'
         elif arch == 'x86':
             toolchain_name = 'x86-4.9'
+            self.executablePrefix = 'i686-linux-android-'
         else:
             toolchain_name = 'llvm'
         prebuilt = os.path.join(self.root, f'toolchains/{toolchain_name}/prebuilt')

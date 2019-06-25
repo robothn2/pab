@@ -8,10 +8,11 @@ class FolderTarget:
         self.root = kwargs['root']
         if not os.path.exists(self.root):
             raise Exception(r'target dir not exist:', self.root)
-        self.kwargs = kwargs
         self.rootBuild = kwargs['rootBuild']
+        self.targetType = kwargs['targetType']
         self.targetName = kwargs.get('targetName', os.path.basename(self.root))
         self.files = SourceFiles(**kwargs)
+        self.kwargs = kwargs
         
     def registerAll(self, toolchain):
         paths = []
@@ -52,13 +53,22 @@ class FolderTarget:
                 
                 out = toolchain.doCommand(cmd, config=config,
                                           src=os.path.join(self.files.rootSrc, file),
-                                          dst=os.path.join(self.files.rootObj, file) + '.o')
+                                          dst=os.path.join(self.files.rootObj, file) + '.o',
+                                          **self.kwargs)
                 cnt += 1
                 if out:
                     objs.append(out)
         
-        if len(objs) > 0:
+        if len(objs) == 0:
+            return
+        
+        lib = toolchain.doCommand('ar',
+                        config=config, src=objs, dst=os.path.join(self.files.rootWorkspace, self.targetName), # args from Target.build
+                        **self.kwargs) # args from Target initialize
+        
+        if self.targetType != 'staticLib':
             toolchain.doCommand('link',
-                            config=config, src=objs, dst=os.path.join(self.files.rootWorkspace, self.targetName), # args from Target.build
-                            **self.kwargs) # args from Target initialize
+                        config=config, src=lib, dst=os.path.join(self.files.rootWorkspace, self.targetName),
+                        **self.kwargs)
+            
         

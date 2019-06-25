@@ -8,21 +8,23 @@ class Command:
         self.name = kwargs['name']
         self.cmds = []
         self.appendixs = [] # collect args which including `"`
+        self.dst = ''
 
     def __str__(self):
         return 'Command:'
     
-    def execute(self, **kwargs):
+    def preprocess(self, **kwargs):
         filters = kwargs['filters']
         compositors = kwargs['compositors']
 
         self.appendixs = []
         self.cmds = [self.executable] # executable must be first element
-        for cmd_filter in filters.get(self.name):
+        for cmd_filter in filters.get(self.name, []):
             self._compositorArgs(compositors, cmd_filter, kwargs)
         
-        dst = kwargs.get('dst')
+        return kwargs['dst']
 
+    def execute(self):
         # using appendixs to avoid incorrect quote on cmd part which existing
         #   double quote `"`
         cmdline = subprocess.list2cmdline(self.cmds) + ' ' + ' '.join(self.appendixs)
@@ -30,8 +32,8 @@ class Command:
         if exitcode != 0:
             print(cmdline)
             print(output)
-            return None
-        return dst
+            return False
+        return True
     
     def _compositorArgs(self, compositors, cmd_filter, kwargs):
         if isinstance(cmd_filter, tuple):
