@@ -16,5 +16,5 @@ if __name__ == '__main__':
                           targetType='sharedLib', # 'executable', 'staticLib', 'sharedLib'
                           includePath='d:/lib/ffmpeg',
                           excludeFiles=['filter_list.c', 'tests'])
-    builder.build(target, top=0)
+    builder.build(target, top=10)
     
