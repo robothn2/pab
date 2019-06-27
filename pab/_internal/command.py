@@ -2,6 +2,13 @@
 
 import subprocess
 
+'''
+  A Command can be divided to multiple CommandParts, each one includes many CommandPart
+which provided by a Plugin.
+  CommandPart can be a raw string for supportting special compiler, a tuple for
+supportting command composition, a lambda/function for supportting config specialization,
+and a list of raw string, a list of tuple.
+'''
 class Command:
     def __init__(self, **kwargs):
         self.executable = kwargs['executable']
