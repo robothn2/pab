@@ -27,7 +27,7 @@ class Command:
         self.appendixs = []
         self.cmds = [self.executable] # executable must be first element
         for cmd_filter in filters.get(self.name, []):
-            self._compositorArgs(compositors, cmd_filter, kwargs)
+            self._compositorArgs(compositors, cmd_filter[1], kwargs)
         
         return kwargs['dst']
 
@@ -46,9 +46,10 @@ class Command:
         if isinstance(cmd_filter, tuple):
             if len(cmd_filter) >= 2:
                 if cmd_filter[0] == 'compositor':
-                    compositor = compositors.get(cmd_filter[1])
-                    if not callable(compositor):
+                    compositor = compositors.get(cmd_filter[1], None)
+                    if not compositor or not callable(compositor[1]):
                         raise Exception("Unhandled compositor name:", cmd_filter)
+                    compositor = compositor[1]
                     assert(len(cmd_filter) == 3)
                     param = cmd_filter[2]
                     if isinstance(param, str):
@@ -71,6 +72,7 @@ class Command:
                     raise Exception('Invalid filter prefix:', cmd_filter)
         elif callable(cmd_filter):
             self._addCompositorResult(cmd_filter(kwargs))
+            
         else:
             raise Exception('Invalid filter:', cmd_filter)
     

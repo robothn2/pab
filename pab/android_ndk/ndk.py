@@ -6,6 +6,7 @@ from pab.compiler.gcc import GCC
 
 class NDK:
     def __init__(self, **kwargs):
+        self.name = 'NDK'
         self.kwargs = kwargs
         self.root = kwargs.get('path', '')
         if not self.root or not os.path.exists(self.root):

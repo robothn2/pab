@@ -4,6 +4,7 @@ import os
 
 class GCC:
     def __init__(self, **kwargs):
+        self.name = 'GCC'
         self.kwargs = kwargs
         self.prefix = kwargs.get('prefix', '')
         self.postfix = kwargs.get('postfix', '')
@@ -15,7 +16,7 @@ class GCC:
         toolchain.registerCommand(self, 'cc', self.prefix + 'gcc' + self.postfix)
         toolchain.registerCommand(self, 'cxx', self.prefix + 'g++' + self.postfix)
         #toolchain.registerCommand(self, 'as', self.prefix + 'as' + self.postfix)
-        toolchain.registerCommand(self, 'ar', self.prefix + 'ar' + self.postfix)
+        toolchain.registerCommand(self, 'ar', self.prefix + 'ar' + self.postfix, '-rcs')
         toolchain.registerCommand(self, 'link', self.prefix + 'ld' + self.postfix)
 
         toolchain.registerCommandFilter(self, ['cc', 'cxx'], [
@@ -29,7 +30,6 @@ class GCC:
         # i686-linux-android-nm.exe -s d:\1.a
         # i686-linux-android-ranlib.exe d:\1.a # create archive index, improve performance for large archive
         toolchain.registerCommandFilter(self, 'ar', [
-                    ('args', '-rcs'),
                     self._filterSrcListAndDst,
                 ])
         toolchain.registerCommandFilter(self, 'link', [
@@ -38,11 +38,11 @@ class GCC:
                     self._filterSrcListAndDst,
                 ])
 
-        toolchain.registerArgCompositor(self, 'sysroot', lambda path, args: f'--sysroot={path}')
-        toolchain.registerArgCompositor(self, 'includePath', lambda path, args: ['-I', path])
-        toolchain.registerArgCompositor(self, 'libPath', lambda path, args: ['-L', path])
-        toolchain.registerArgCompositor(self, 'lib', lambda path, args: f'-l{path}')
-        toolchain.registerArgCompositor(self, 'define', lambda m, args: f'-D{m}')
+        toolchain.registerCompositor(self, 'sysroot', lambda path, args: f'--sysroot={path}')
+        toolchain.registerCompositor(self, 'includePath', lambda path, args: ['-I', path])
+        toolchain.registerCompositor(self, 'libPath', lambda path, args: ['-L', path])
+        toolchain.registerCompositor(self, 'lib', lambda path, args: f'-l{path}')
+        toolchain.registerCompositor(self, 'define', lambda m, args: f'-D{m}')
 
     def _filterSrcListAndDst(self, args):
         ret = []

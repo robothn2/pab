@@ -6,6 +6,7 @@ from ._internal.os import OS
 
 class Config:
     def __init__(self, args):
+        self.name = 'Config'
         self.cfg = args
         self.archs = Archs()
         self._arch = self.archs.get(args['arch'])

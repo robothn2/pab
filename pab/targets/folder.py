@@ -5,6 +5,7 @@ from pab.source_files import SourceFiles
 
 class FolderTarget:
     def __init__(self, **kwargs):
+        self.name = 'Target'
         self.root = kwargs['root']
         if not os.path.exists(self.root):
             raise Exception(r'target dir not exist:', self.root)
