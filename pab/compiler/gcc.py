@@ -22,6 +22,9 @@ class GCC:
                     ('args', '-c', '-Wall'),
                     self._filterSrcListAndDst,
                 ])
+        toolchain.registerCommandFilter(self, 'cc', ('args', '-std=c11'))
+        toolchain.registerCommandFilter(self, 'cxx', ('args', '-std=c++11'))
+        
         # i686-linux-android-ar.exe -rcs d:\1.a d:\lib\ffmpeg\build\libavutil\obj\adler32.c.o d:\lib\ffmpeg\build\libavutil\obj\aes.c.o d:\lib\ffmpeg\build\libavutil\obj\aes_ctr.c.o
         # i686-linux-android-nm.exe -s d:\1.a
         # i686-linux-android-ranlib.exe d:\1.a # create archive index, improve performance for large archive
@@ -39,6 +42,7 @@ class GCC:
         toolchain.registerArgCompositor(self, 'includePath', lambda path, args: ['-I', path])
         toolchain.registerArgCompositor(self, 'libPath', lambda path, args: ['-L', path])
         toolchain.registerArgCompositor(self, 'lib', lambda path, args: f'-l{path}')
+        toolchain.registerArgCompositor(self, 'define', lambda m, args: f'-D{m}')
 
     def _filterSrcListAndDst(self, args):
         ret = []

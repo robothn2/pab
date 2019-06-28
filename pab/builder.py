@@ -13,11 +13,12 @@ class Builder:
     def build(self, targets, **kwargs):
         self.toolchain.registerPlugin(self.config)
 
-        cfgGen = ConfigGenerator(**self.config.cfg, **kwargs)
-        self.toolchain.registerPlugin(cfgGen)
-        cfgGen.checkAll(self.toolchain, self.config)
-        self.toolchain.unregisterPlugin(cfgGen)
-        
+        if kwargs.get('check', True):
+            cfgGen = ConfigGenerator(**self.config.cfg, **kwargs)
+            self.toolchain.registerPlugin(cfgGen)
+            cfgGen.checkAll(self.toolchain, self.config)
+            self.toolchain.unregisterPlugin(cfgGen)
+
         if isinstance(targets, list):
             for target in targets:
                 self._buildTarget(target, kwargs)

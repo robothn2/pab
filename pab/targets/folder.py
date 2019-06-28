@@ -12,6 +12,7 @@ class FolderTarget:
         self.targetType = kwargs['targetType']
         self.targetName = kwargs.get('targetName', os.path.basename(self.root))
         self.files = SourceFiles(**kwargs)
+        self.defines = kwargs.get('defines', [])
         self.kwargs = kwargs
         
     def registerAll(self, toolchain):
@@ -35,6 +36,10 @@ class FolderTarget:
         toolchain.registerCommandFilter(self, ['cc', 'cxx'], [
                     ('compositor', 'includePath', include_paths),
                 ])
+        toolchain.registerCommandFilter(self, ['cc', 'cxx'], [
+                    ('compositor', 'define', self.defines),
+                ])
+        
 
     def build(self, config, toolchain, args):
         print('===Build target:', self.files.rootSrc)

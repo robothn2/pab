@@ -64,7 +64,11 @@ class NDK:
         # for # include_next <stdint.h> & #include <errno.h>
         toolchain.registerCommandFilter(self, ['cc', 'cxx'], [
                 ('compositor', 'sysroot', os.path.join(self.root, 'sysroot')),
-                ('compositor', 'includePath', os.path.join(self.root, 'sysroot/usr/include/i686-linux-android')),
+                ('compositor', 'includePath', os.path.join(self.root, 'sysroot/usr/include/arm-linux-androideabi')),
+                ])
+        toolchain.registerCommandFilter(self, 'cxx', [
+                ('compositor', 'includePath', os.path.join(self.root, 'sources/cxx-stl/gnu-libstdc++/4.9/include')),
+                ('compositor', 'includePath', os.path.join(self.root, 'sources/cxx-stl/gnu-libstdc++/4.9/libs/armeabi-v7a/include')),
                 ])
         toolchain.registerCommandFilter(self, 'link', [
                     #('args', '-static'), # Android use static library
