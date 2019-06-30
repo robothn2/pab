@@ -42,10 +42,6 @@ builder.build(target)
 * 构建流程支持并行模式，尽可能快的执行，但失败时直接退出，无法继续执行
 
 # Todo
-* 对 CommandPart 合成方法、来源进行分类
-* 以 Command 合成为中心进行重构，让其它部分可以方便调用 Command 合成(compositor)功能
-* 注册 Command 时应该允许附带参数
-* Command 内合成功能要支持递归
+* 支持 Plugin 反注册
 * FolderTarget 支持从独立 py 文件内读取，每个开源项目有对应文件，文件力求简单易配置
-* 使用 gcc 编译出 arm 架构的 so
 * 使用 llvm 编译出 arm 架构的 so

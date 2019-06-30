@@ -25,20 +25,27 @@ class Command:
     def preprocess(self, **kwargs):
         filters = kwargs['filters']
         compositors = kwargs['compositors']
+        verbose = kwargs.get('verbose', False)
 
+        if verbose:
+            print('> compositor of', self.name)
         self.appendixs = []
         self.cmds = [self.executable]  # executable must be first element
         for cmd_filter in filters.get(self.name, []):
             result = self._recursiveFilter(cmd_filter[1], compositors, kwargs)
+            if verbose:
+                print('- compositor:', cmd_filter, '->', result)
             self._addFilterResult(result)
 
-        return kwargs['dst']
+        return kwargs.get('dst', None)
 
-    def execute(self):
+    def execute(self, verbose=False):
         # using appendixs to avoid incorrect quote on cmd part which existing
         #   double quote `"`
         cmdline = subprocess.list2cmdline(self.cmds) \
             + ' ' + ' '.join(self.appendixs)
+        if verbose:
+            print('-', cmdline)
         exitcode, output = subprocess.getstatusoutput(cmdline)
         if exitcode != 0:
             print(cmdline)
@@ -54,8 +61,9 @@ class Command:
             # GCC: ['-c', '-Wall']
             ret = []
             for f in cmd_filter:
-                self._combineListAndResult(
-                        ret, self._recursiveFilter(f, compositors, kwargs))
+                result = self._recursiveFilter(f, compositors, kwargs)
+                self._combineListAndResult(ret, result)
+            # print('-', cmd_filter, '->', ret)
             return ret
 
         elif callable(cmd_filter):
@@ -81,10 +89,13 @@ class Command:
                         ret,
                         self._recursiveFilter(result, compositors, kwargs))
                 return ret
+
             elif callable(param):
-                # ('linkOutput', _filterSrcListAndDst)
-                result = compositor(param(kwargs), kwargs)
-                return self._recursiveFilter(result, compositors, kwargs)
+                # ('includePath', lambda kwargs: kwargs['config'].getArch())
+                result = param(kwargs)
+                result2 = compositor(result, kwargs)
+                # print('-', result, result2)
+                return self._recursiveFilter(result2, compositors, kwargs)
 
         raise Exception('Invalid filter:', cmd_filter)
 

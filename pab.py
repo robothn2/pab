@@ -8,15 +8,15 @@ from pab.visual_studio.vs2015 import VS2015
 
 if __name__ == '__main__':
     # compiler = VS2015()
-    compiler = NDK(path='d:/lib/android-ndk-r14b', platform=23, compiler='gcc')
-    builder = Builder(compiler, target_os='android', arch='x86', cpu='i686',
+    compiler = NDK(path='d:/lib/android-ndk-r14b', platform=24, compiler='gcc')
+    builder = Builder(compiler, target_os='android', arch='arm', cpu='armv7a',
                       target_platform_ver='10.0.17763.0')
 
     target = FolderTarget(
             root='D:/lib/ffmpeg/libavutil',
-            depth=0, rescan=True,
+            depth=0, rescan=True,  # verbose=True,
             rootBuild='D:/lib/ffmpeg/build/libavutil',
             targetType='sharedLib',  # 'executable', 'staticLib', 'sharedLib'
             includePath='d:/lib/ffmpeg',
             excludeFiles=['filter_list.c', 'tests'])
-    builder.build(target, top=10, check=False)
+    builder.build(target, top=0, check=False)

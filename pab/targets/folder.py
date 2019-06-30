@@ -52,10 +52,18 @@ class FolderTarget:
         top = args.get('top', 0)
         cnt = 0
         objs = []
+        created_dst_folders = []
         for cmd, files in self.files.files.items():
             for file in files:
                 if top and cnt >= top:
                     break  # only process top count files
+
+                sub_folder = os.path.dirname(file)
+                if sub_folder and sub_folder not in created_dst_folders:
+                    dst_folder = os.path.join(self.files.rootObj, sub_folder)
+                    if not os.path.exists(dst_folder):
+                        os.makedirs(dst_folder)
+                    created_dst_folders.append(sub_folder)
 
                 out = toolchain.doCommand(
                         cmd, config=config,
@@ -73,11 +81,15 @@ class FolderTarget:
             toolchain.doCommand(
                     'ar',
                     config=config, src=objs,
-                    dst=os.path.join(self.files.rootWorkspace, self.targetName),
+                    dst=os.path.join(self.files.rootWorkspace,
+                                     self.targetName),
                     **self.kwargs)
         else:
-            toolchain.doCommand(
+            dst = toolchain.doCommand(
                     'link',
                     config=config, src=objs,
-                    dst=os.path.join(self.files.rootWorkspace, self.targetName),
+                    dst=os.path.join(self.files.rootWorkspace,
+                                     self.targetName),
                     **self.kwargs)
+
+            toolchain.doCommand('ldd', config=config, src=dst)

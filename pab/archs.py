@@ -5,8 +5,8 @@ class Archs:
     def __init__(self):
         self.hand_write_archs = [
                 ('arm64', 'aarch64'),
-                'arm',
-                'x86',
+                ('arm', 'armeabi'),
+                ('x86', 'i686'),
                 ('x86_64', 'x64'),
                 ]
 

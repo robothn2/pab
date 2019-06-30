@@ -33,6 +33,14 @@ class Config:
 
     def registerAll(self, toolchain):
         toolchain.registerSourceFileFilter(self, self._filterSourceFile)
+        toolchain.registerCommandFilter(self, ['cc', 'cxx'],
+                                        self._filterTargetOS)
+
+    def _filterTargetOS(self, kwargs):
+        o = self.targetOS.name
+        if o == 'android':
+            return ('define', '__ANDROID__')
+        return []
 
     def _filterSourceFile(self, args):
         # todo: update args['dst']

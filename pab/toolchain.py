@@ -24,10 +24,11 @@ class Toolchain:
     '''
     Command 提供命令对应的可执行文件路径
     '''
-    def registerCommand(self, plugin, name, executable, *extra_parts):
+    def registerCommand(self, plugin, name, executable,
+                        custom_log='src', *extra_parts):
         if hasattr(self.cmds, name):
             raise Exception('Found duplicate ArgCompositor')
-        self.cmds[name] = (plugin.name, executable)
+        self.cmds[name] = (plugin.name, executable, custom_log)
         self.registerCommandFilter(plugin, name, extra_parts)
 
     '''
@@ -105,8 +106,13 @@ class Toolchain:
                     print('*', cmd_name, kwargs['src'], 'rejected:', reason)
                     return None  # file reject by filter
 
-        cmd = Command(name=cmd_name, executable=self.cmds[cmd_name][1])
+        cmd_entry = self.cmds[cmd_name]
+        cmd = Command(name=cmd_name, executable=cmd_entry[1])
         dst = cmd.preprocess(cmd=cmd_name, filters=self.cmdFilters,
                              compositors=self.compositors, **kwargs)
-        print('=', cmd_name, dst)
-        return dst if cmd.execute() else None
+        custom_log = cmd_entry[2]
+        if (custom_log == 'src'):
+            print('=', cmd_name, src)
+        elif (custom_log == 'dst'):
+            print('=', cmd_name, dst)
+        return dst if cmd.execute(kwargs.get('verbose', False)) else None
