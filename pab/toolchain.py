@@ -1,6 +1,7 @@
-#coding: utf-8
+# coding: utf-8
 
 from ._internal.command import Command
+
 
 class Toolchain:
     def __init__(self, *plugins):
@@ -16,19 +17,19 @@ class Toolchain:
         print('Register plugin:', plugin)
         self.plugins.append(plugin)
         plugin.registerAll(self)
-    
+
     def unregisterPlugin(self, plugin):
         pass
-    
+
     '''
     Command 提供命令对应的可执行文件路径
     '''
-    def registerCommand(self, plugin, cmd_name, cmd_exec_path, *cmd_extra_parts):
-        if hasattr(self.cmds, cmd_name):
+    def registerCommand(self, plugin, name, executable, *extra_parts):
+        if hasattr(self.cmds, name):
             raise Exception('Found duplicate ArgCompositor')
-        self.cmds[cmd_name] = (plugin.name, cmd_exec_path)
-        self.registerCommandFilter(plugin, cmd_name, cmd_extra_parts)
-        
+        self.cmds[name] = (plugin.name, executable)
+        self.registerCommandFilter(plugin, name, extra_parts)
+
     '''
     SourceFileFilter 可以根据条件排除文件参与构建
     '''
@@ -36,19 +37,19 @@ class Toolchain:
         if not callable(filter_func):
             raise Exception('Invalid SourceFileFilter')
         self.sourceFileFilters.append((plugin, filter_func))
-        
+
     '''
     CommandFilter 参与命令行参数构造
     '''
-    def registerCommandFilter(self, plugin, cmd_names, filters_new):
-        if not filters_new or not cmd_names:
+    def registerCommandFilter(self, plugin, cmd_names, filters):
+        if not filters or not cmd_names:
             return
         if isinstance(cmd_names, str):
-            self._registerOneCommandFilter(plugin, cmd_names, filters_new)
+            self._registerOneCommandFilter(plugin, cmd_names, filters)
         elif isinstance(cmd_names, list):
             for cmd_name in cmd_names:
                 if isinstance(cmd_name, str):
-                    self._registerOneCommandFilter(plugin, cmd_name, filters_new)
+                    self._registerOneCommandFilter(plugin, cmd_name, filters)
 
     def _registerOneCommandFilter(self, plugin, cmd_name, filters_new):
         if cmd_name in self.cmdFilters:
@@ -56,17 +57,17 @@ class Toolchain:
         else:
             self.cmdFilters[cmd_name] = []
             filters = self.cmdFilters[cmd_name]
-        
+
         if isinstance(filters_new, list):
             for filter_one in filters_new:
                 filters.append((plugin.name, filter_one))
-        elif isinstance(filters_new, tuple):
+        elif isinstance(filters_new, tuple) or isinstance(filters_new, str):
             filters.append((plugin.name, filters_new))
         elif callable(filters_new):
             filters.append((plugin.name, filters_new))
         else:
             raise Exception('Invalid filter format:', filters_new)
-        
+
     '''
     Compositor 提供命令行参数合成函数，例如: 每个编译器支持的包含库路径在命令行内写法不同
     '''
@@ -76,13 +77,14 @@ class Toolchain:
         elif isinstance(arg_names, list):
             for arg_name in arg_names:
                 if isinstance(arg_name, str):
-                    self._registerOneCompositor(plugin, arg_name, compositor_func)
-                    
+                    self._registerOneCompositor(plugin, arg_name,
+                                                compositor_func)
+
     def _registerOneCompositor(self, plugin, arg_name, compositor_func):
         if hasattr(self.compositors, arg_name):
             raise Exception('Found duplicate ArgCompositor %s' % arg_name)
         self.compositors[arg_name] = (plugin.name, compositor_func)
-        
+
     def dumpInfo(self):
         print('=toolchain dump begin')
         print(self.cmds)
@@ -91,20 +93,20 @@ class Toolchain:
         for arg, compositor in self.compositors.items():
             print(arg, compositor)
         print('=toolchain dump end')
-    
+
     def doCommand(self, cmd_name, **kwargs):
-        if not cmd_name in self.cmds:
-            return None # unsupport Command
+        if cmd_name not in self.cmds:
+            return None  # unsupport Command
         src = kwargs['src']
-        if isinstance(src, str): # skip Command: link, ar
+        if isinstance(src, str):  # skip Command: link, ar
             for file_filter in self.sourceFileFilters:
                 ret, reason = file_filter[1](kwargs)
                 if not ret:
                     print('*', cmd_name, kwargs['src'], 'rejected:', reason)
-                    return None # file reject by filter
-        
+                    return None  # file reject by filter
+
         cmd = Command(name=cmd_name, executable=self.cmds[cmd_name][1])
-        dst = cmd.preprocess(cmd=cmd_name, filters=self.cmdFilters, compositors=self.compositors, **kwargs)
+        dst = cmd.preprocess(cmd=cmd_name, filters=self.cmdFilters,
+                             compositors=self.compositors, **kwargs)
         print('=', cmd_name, dst)
         return dst if cmd.execute() else None
-        

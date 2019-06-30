@@ -1,83 +1,102 @@
-#coding: utf-8
+# coding: utf-8
 
 import subprocess
 
 '''
-  A Command can be divided to multiple CommandParts, each one includes many CommandPart
-which provided by a Plugin.
-  CommandPart can be a raw string for supportting special compiler, a tuple for
-supportting command composition, a lambda/function for supportting config specialization,
-and a list of raw string, a list of tuple.
+A Command consists of multiple parts, each one includes many CommandPart which
+provided by a Plugin.
+A CommandPart can be a string for supportting special compiler, a tuple for
+supportting command composition, a lambda/function for supportting config
+specialization, and a list of string, a list of tuple.
 '''
+
+
 class Command:
     def __init__(self, **kwargs):
         self.executable = kwargs['executable']
         self.name = kwargs['name']
         self.cmds = []
-        self.appendixs = [] # collect args which including `"`
+        self.appendixs = []  # collect args which including `"`
         self.dst = ''
 
     def __str__(self):
         return 'Command:'
-    
+
     def preprocess(self, **kwargs):
         filters = kwargs['filters']
         compositors = kwargs['compositors']
 
         self.appendixs = []
-        self.cmds = [self.executable] # executable must be first element
+        self.cmds = [self.executable]  # executable must be first element
         for cmd_filter in filters.get(self.name, []):
-            self._compositorArgs(compositors, cmd_filter[1], kwargs)
-        
+            result = self._recursiveFilter(cmd_filter[1], compositors, kwargs)
+            self._addFilterResult(result)
+
         return kwargs['dst']
 
     def execute(self):
         # using appendixs to avoid incorrect quote on cmd part which existing
         #   double quote `"`
-        cmdline = subprocess.list2cmdline(self.cmds) + ' ' + ' '.join(self.appendixs)
-        exitcode,output = subprocess.getstatusoutput(cmdline)
+        cmdline = subprocess.list2cmdline(self.cmds) \
+            + ' ' + ' '.join(self.appendixs)
+        exitcode, output = subprocess.getstatusoutput(cmdline)
         if exitcode != 0:
             print(cmdline)
             print(output)
             return False
         return True
-    
-    def _compositorArgs(self, compositors, cmd_filter, kwargs):
-        if isinstance(cmd_filter, tuple):
-            if len(cmd_filter) >= 2:
-                if cmd_filter[0] == 'compositor':
-                    compositor = compositors.get(cmd_filter[1], None)
-                    if not compositor or not callable(compositor[1]):
-                        raise Exception("Unhandled compositor name:", cmd_filter)
-                    compositor = compositor[1]
-                    assert(len(cmd_filter) == 3)
-                    param = cmd_filter[2]
-                    if isinstance(param, str):
-                         # support: ('compositor', 'sysroot', self.sysroot)
-                        self._addCompositorResult(compositor(param, kwargs))
-                    elif isinstance(param, list) or isinstance(param, tuple):
-                         # support ('compositor', 'libPath', ['../lib', '../../lib'])
-                        for p in param:
-                            self._addCompositorResult(compositor(p, kwargs))
-                    elif callable(param):
-                        # support: ('compositor', 'linkOutput', lambda args: args['dst'])
-                        self._addCompositorResult(compositor(param(kwargs), kwargs))
-                    else:
-                        raise Exception('Invalid filter prefix:', cmd_filter)
 
-                elif cmd_filter[0] == 'args':
-                    self._addCompositorResult(cmd_filter[1:])
-                    
-                else:
-                    raise Exception('Invalid filter prefix:', cmd_filter)
+    def _recursiveFilter(self, cmd_filter, compositors, kwargs):
+        if isinstance(cmd_filter, str):
+            return cmd_filter
+
+        elif isinstance(cmd_filter, list):
+            # GCC: ['-c', '-Wall']
+            ret = []
+            for f in cmd_filter:
+                self._combineListAndResult(
+                        ret, self._recursiveFilter(f, compositors, kwargs))
+            return ret
+
         elif callable(cmd_filter):
-            self._addCompositorResult(cmd_filter(kwargs))
-            
-        else:
-            raise Exception('Invalid filter:', cmd_filter)
-    
-    def _addCompositorResult(self, result):
-        if isinstance(result, list) or isinstance(result, tuple):
+            return self._recursiveFilter(cmd_filter(kwargs),
+                                         compositors, kwargs)
+
+        elif isinstance(cmd_filter, tuple):
+            assert(len(cmd_filter) == 2)
+            compositor = compositors.get(cmd_filter[0], None)
+            assert(compositor and callable(compositor[1]))
+            compositor = compositor[1]
+            param = cmd_filter[1]
+            if isinstance(param, str):
+                # ('sysroot', self.sysroot)
+                return self._recursiveFilter(compositor(param, kwargs),
+                                             compositors, kwargs)
+            elif isinstance(param, list):
+                # ('libPath', ['lib', '../lib'])
+                ret = []
+                for p in param:
+                    result = compositor(p, kwargs)
+                    self._combineListAndResult(
+                        ret,
+                        self._recursiveFilter(result, compositors, kwargs))
+                return ret
+            elif callable(param):
+                # ('linkOutput', _filterSrcListAndDst)
+                result = compositor(param(kwargs), kwargs)
+                return self._recursiveFilter(result, compositors, kwargs)
+
+        raise Exception('Invalid filter:', cmd_filter)
+
+    @staticmethod
+    def _combineListAndResult(listExist, result):
+        if isinstance(result, list):
+            listExist.extend(result)
+        elif isinstance(result, str):
+            listExist.append(result)
+
+    def _addFilterResult(self, result):
+        if isinstance(result, list):
             for part in result:
                 self._addCmdPart(part)
         elif isinstance(result, str):

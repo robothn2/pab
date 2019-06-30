@@ -1,6 +1,7 @@
-#coding: utf-8
+# coding: utf-8
 
 import os
+
 
 class GCC:
     def __init__(self, **kwargs):
@@ -11,7 +12,7 @@ class GCC:
         self.root = os.path.dirname(self.prefix)
         if not os.path.exists(self.root):
             raise Exception(r'gcc dir not exist')
-        
+
     def registerAll(self, toolchain):
         toolchain.registerCommand(self, 'cc', self.prefix + 'gcc' + self.postfix)
         toolchain.registerCommand(self, 'cxx', self.prefix + 'g++' + self.postfix)
@@ -20,12 +21,12 @@ class GCC:
         toolchain.registerCommand(self, 'link', self.prefix + 'ld' + self.postfix)
 
         toolchain.registerCommandFilter(self, ['cc', 'cxx'], [
-                    ('args', '-c', '-Wall'),
+                    ['-c', '-Wall'],
                     self._filterSrcListAndDst,
                 ])
-        toolchain.registerCommandFilter(self, 'cc', ('args', '-std=c11'))
-        toolchain.registerCommandFilter(self, 'cxx', ('args', '-std=c++11'))
-        
+        toolchain.registerCommandFilter(self, 'cc', '-std=c11')
+        toolchain.registerCommandFilter(self, 'cxx', '-std=c++11')
+
         # i686-linux-android-ar.exe -rcs d:\1.a d:\lib\ffmpeg\build\libavutil\obj\adler32.c.o d:\lib\ffmpeg\build\libavutil\obj\aes.c.o d:\lib\ffmpeg\build\libavutil\obj\aes_ctr.c.o
         # i686-linux-android-nm.exe -s d:\1.a
         # i686-linux-android-ranlib.exe d:\1.a # create archive index, improve performance for large archive
@@ -33,16 +34,21 @@ class GCC:
                     self._filterSrcListAndDst,
                 ])
         toolchain.registerCommandFilter(self, 'link', [
-                    ('compositor', 'lib', 'c'),     # link with libc.a
-                    #('compositor', 'lib', 'stdc++'), # link with libstdc++.a
+                    ('lib', 'c'),     # link with libc.a
+                    # ('lib', 'stdc++'), # link with libstdc++.a
                     self._filterSrcListAndDst,
                 ])
 
-        toolchain.registerCompositor(self, 'sysroot', lambda path, args: f'--sysroot={path}')
-        toolchain.registerCompositor(self, 'includePath', lambda path, args: ['-I', path])
-        toolchain.registerCompositor(self, 'libPath', lambda path, args: ['-L', path])
-        toolchain.registerCompositor(self, 'lib', lambda path, args: f'-l{path}')
-        toolchain.registerCompositor(self, 'define', lambda m, args: f'-D{m}')
+        toolchain.registerCompositor(self, 'sysroot',
+                                     lambda path, args: f'--sysroot={path}')
+        toolchain.registerCompositor(self, 'includePath',
+                                     lambda path, args: ['-I', path])
+        toolchain.registerCompositor(self, 'libPath',
+                                     lambda path, args: ['-L', path])
+        toolchain.registerCompositor(self, 'lib',
+                                     lambda path, args: f'-l{path}')
+        toolchain.registerCompositor(self, 'define',
+                                     lambda m, args: f'-D{m}')
 
     def _filterSrcListAndDst(self, args):
         ret = []
@@ -54,7 +60,7 @@ class GCC:
         gcc -c hello.c
         # link to static lib
         ar -rcs libhello.a hello.o
-        gcc -o hello_static main.c -L. -lhello 
+        gcc -o hello_static main.c -L. -lhello
         # link to dynamic lib
         gcc -shared -fpic -o libhello.so hello.o
         gcc -o hello main.c libhello.so

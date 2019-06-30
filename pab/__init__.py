@@ -1,4 +1,4 @@
-#coding: utf-8
+# coding: utf-8
 
 r"""Auto build tool for source folder
 

@@ -1,4 +1,5 @@
-#coding: utf-8
+# coding: utf-8
+
 
 class Archs:
     def __init__(self):
@@ -8,7 +9,7 @@ class Archs:
                 'x86',
                 ('x86_64', 'x64'),
                 ]
-        
+
         self.archs = []
         self.archsMap = {}
         for archs in self.hand_write_archs:
@@ -22,4 +23,3 @@ class Archs:
 
     def get(self, memberName):
         return self.archsMap.get(memberName, None)
-    

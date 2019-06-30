@@ -1,4 +1,5 @@
-#coding: utf-8
+# coding: utf-8
+
 
 class Cpus:
     def __init__(self):
@@ -8,7 +9,7 @@ class Cpus:
                 ('i686', 'i386', 'x86'),
                 ('x86_64', 'x64'),
                 ]
-        
+
         self.cpus = []
         self.cpusMap = {}
         for cpus in self.hand_write_cpus:
@@ -22,4 +23,3 @@ class Cpus:
 
     def get(self, memberName):
         return self.cpusMap.get(memberName, None)
-    

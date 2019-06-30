@@ -1,8 +1,9 @@
-#coding: utf-8
+# coding: utf-8
 
 from .config import Config
 from .toolchain import Toolchain
 from .utils.config_generator import ConfigGenerator
+
 
 class Builder:
     def __init__(self, compiler, **config):
