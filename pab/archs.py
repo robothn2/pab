@@ -8,6 +8,8 @@ class Archs:
                 ('arm', 'armeabi'),
                 ('x86', 'i686'),
                 ('x86_64', 'x64'),
+                ('ppc'),
+                ('mips'),
                 ]
 
         self.archs = []

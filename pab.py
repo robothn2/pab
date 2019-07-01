@@ -17,6 +17,9 @@ if __name__ == '__main__':
             depth=0, rescan=True,  # verbose=True,
             rootBuild='D:/lib/ffmpeg/build/libavutil',
             targetType='sharedLib',  # 'executable', 'staticLib', 'sharedLib'
+            std='c11',  # c11, c99, c++11, c++15, c++17
+            stl='gnu-libstdc++',  # gnu-libstdc++/llvm-libc++abi/llvm-libc++/stlport/gabi++/system
+            crtStatic=False,  # True - static, False - shared
             includePath='d:/lib/ffmpeg',
             excludeFiles=['filter_list.c', 'tests'])
     builder.build(target, top=0, check=False)

@@ -76,13 +76,37 @@ class NDK:
                         self.getCppLibSubfolder(kwargs['config']),
                         'include')),
                 ])
+        toolchain.registerCommandFilter(self, 'link', [
+                    self._filterLinkToLib,
+                ])
 
         if self.kwargs.get('compiler', 'llvm') == 'gcc':
             gcc = GCC(prefix=os.path.join(self.rootBin, self.executablePrefix),
-                      postfix='.exe')
+                      suffix=self.executableSuffix)
             toolchain.registerPlugin(gcc)
         else:
             pass  # todo: llvm
+
+    def _filterLinkToLib(self, args):
+        if args['cmd'] != 'link':
+            return
+
+        ret = []
+        std = args.get('std', 'c11')
+        stl = args.get('stl', 'gnu-libstdc++')
+        crtStatic = args.get('crtStatic', False)
+        if std[:3] == 'c++':
+            if crtStatic:
+                ret.append(('lib', 'stdc++'))
+            else:
+                ret.append('libstdc++.so')
+        else:
+            if crtStatic:
+                ret.append(('lib', 'c'))
+            else:
+                # $NDK/platforms/android-21/arch-x86/usr/lib/libc.so
+                ret.append('libc.so')
+        return ret
 
     def getToolchainName(self, config):
         arch = config.getArch()

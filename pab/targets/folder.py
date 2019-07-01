@@ -13,6 +13,7 @@ class FolderTarget:
         self.rootBuild = kwargs['rootBuild']
         self.targetType = kwargs['targetType']
         self.targetName = kwargs.get('targetName', os.path.basename(self.root))
+        self.std = kwargs.get('std', 'c11')  # c99, c11, c++11, c++15, c++17
         self.files = SourceFiles(**kwargs)
         self.defines = kwargs.get('defines', [])
         self.kwargs = kwargs

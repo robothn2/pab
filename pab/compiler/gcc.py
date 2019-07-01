@@ -8,18 +8,18 @@ class GCC:
         self.name = 'GCC'
         self.kwargs = kwargs
         self.prefix = kwargs.get('prefix', '')
-        self.postfix = kwargs.get('postfix', '')
+        self.suffix = kwargs.get('suffix', '')
         self.root = os.path.dirname(self.prefix)
         if not os.path.exists(self.root):
             raise Exception(r'gcc dir not exist')
 
     def registerAll(self, toolchain):
-        toolchain.registerCommand(self, 'cc', self.prefix + 'gcc' + self.postfix)
-        toolchain.registerCommand(self, 'cxx', self.prefix + 'g++' + self.postfix)
-        # toolchain.registerCommand(self, 'as', self.prefix + 'as' + self.postfix)
-        toolchain.registerCommand(self, 'ar', self.prefix + 'ar' + self.postfix, 'dst', '-rcs')
-        toolchain.registerCommand(self, 'link', self.prefix + 'gcc' + self.postfix, 'dst')
-        toolchain.registerCommand(self, 'ldd', self.prefix + 'ld.bfd' + self.postfix)
+        toolchain.registerCommand(self, 'cc', self.prefix + 'gcc' + self.suffix)
+        toolchain.registerCommand(self, 'cxx', self.prefix + 'g++' + self.suffix)
+        # toolchain.registerCommand(self, 'as', self.prefix + 'as' + self.suffix)
+        toolchain.registerCommand(self, 'ar', self.prefix + 'ar' + self.suffix, 'dst', '-rcs')
+        toolchain.registerCommand(self, 'link', self.prefix + 'gcc' + self.suffix, 'dst')
+        toolchain.registerCommand(self, 'ldd', self.prefix + 'ld.bfd' + self.suffix)
 
         toolchain.registerCommandFilter(self, ['cc', 'cxx'], [
                     ['-c', '-Wall'],
@@ -35,8 +35,6 @@ class GCC:
                     self._filterSrcListAndDst,
                 ])
         toolchain.registerCommandFilter(self, 'link', [
-                    ('lib', 'c'),     # link with libc.a
-                    # ('lib', 'stdc++'), # link with libstdc++.a
                     self._filterSrcListAndDst,
                 ])
 
