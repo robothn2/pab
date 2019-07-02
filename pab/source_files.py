@@ -14,7 +14,15 @@ class SourceFiles:
         self.rootSrc = os.path.realpath(kwargs['root'])
         self.rootWorkspace = os.path.realpath(kwargs['rootBuild'])
         self.depth = kwargs.get('depth', 0)
-        self.excludeFiles = kwargs.get('excludeFiles', [])
+        self.verbose = kwargs.get('verbose', False)
+        self.excludeFilesRegex = []
+        self.excludeFiles = []
+        excludeFiles = kwargs.get('excludeFiles', [])
+        for sentence in excludeFiles:
+            if isinstance(sentence, str):
+                self.excludeFiles.append(sentence)
+            else:
+                self.excludeFilesRegex.append(sentence)
         self.rootObj = os.path.join(self.rootWorkspace, 'obj')
         ws_file = os.path.join(self.rootWorkspace, 'ws.json')
         if not os.path.exists(self.rootWorkspace):
@@ -41,10 +49,20 @@ class SourceFiles:
         with open(ws_file, 'w', encoding='utf-8') as f:
             json.dump(self.files, f, indent=4)
 
+    def _is_exclude(self, file_name):
+        if file_name in self.excludeFiles:
+            return True  # ignore file by execludeFiles
+        for r in self.excludeFilesRegex:
+            if r.match(file_name):
+                return True
+        return False
+
     def _search_folder(self, fullpath, depth):
         for file_name in os.listdir(fullpath):
-            if file_name in self.excludeFiles:
-                continue  # ignore file by execludeFiles
+            if self._is_exclude(file_name):
+                if self.verbose:
+                    print('- exclude:', file_name, 'under', fullpath)
+                continue
             src = os.path.join(fullpath, file_name)
             if os.path.islink(src):
                 continue  # no link files

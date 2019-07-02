@@ -6,6 +6,7 @@ import re
 
 class VS2015:
     def __init__(self, **kwargs):
+        self.name = 'VS2015'
         self.kwargs = kwargs
         # Get install path of vs2015:
         self.root = r'C:\Program Files (x86)\Microsoft Visual Studio 14.0'
@@ -13,7 +14,10 @@ class VS2015:
             raise Exception('Invalid vs dir: %s' % self.root)
 
     def __str__(self):
-        return 'VS2015'
+        return self.name
+
+    def applyConfig(self, config):
+        pass
 
     def registerAll(self, toolchain):
         # exe PATH:
@@ -58,24 +62,24 @@ class VS2015:
                      '/LARGEADDRESSAWARE',
                      '/DYNAMICBASE', '/NXCOMPAT', '/SAFESEH',
                      'kernel32.lib', 'user32.lib', 'gdi32.lib', 'advapi32.lib',
-                     'shell32.lib',
-                     # 'winspool.lib', 'comdlg32.lib', 'ole32.lib', 'oleaut32.lib',
+                     'shell32.lib', 'ole32.lib', 'oleaut32.lib', 'shell32.lib',
+                     'dbghelp.lib', 'userenv.lib', 'shlwapi.lib', 'psapi.lib',
+                     'version.lib', 'winmm.lib',
+                     # 'winspool.lib', 'comdlg32.lib',
                      # 'uuid.lib', 'odbc32.lib', 'odbccp32.lib',
                      ],
                     ('libPath', os.path.join(self.root, r'VC\lib')),
                     self._filterByConfig,
                 ])
 
-        toolchain.registerArgCompositor(self, ['sysroot', 'includePath'], self._makeIncludePath)
-        toolchain.registerArgCompositor(self, 'libPath', self._makeLibraryPath)
-        toolchain.registerArgCompositor(self, 'lib', lambda path, args: path)
-
-    @staticmethod
-    def _makeIncludePath(path, args = None):
-        return ['/I', path]
-    @staticmethod
-    def _makeLibraryPath(path, args = None):
-        return f'/LIBPATH:"{path}"'
+        toolchain.registerCompositor(self, ['sysroot', 'includePath'],
+                                     lambda path, args: f'/I"{path}"')
+        toolchain.registerCompositor(self, 'libPath',
+                                     lambda path, args: f'/LIBPATH:"{path}"')
+        toolchain.registerCompositor(self, 'lib',
+                                     lambda path, args: path)
+        toolchain.registerCompositor(self, 'define',
+                                     lambda m, args: f'-D{m}')
 
     def _filterByConfig(self, args):
         ret = []
@@ -124,6 +128,9 @@ class VS2015:
         #   string, vector, map, cstdio, iostream, sstream, ciso646
         #       C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\include
         #       C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\include
+        #   ctype.h
+        #       C:\Program Files (x86)\Windows Kits\10\Include\10.0.17134.0\ucrt
+        #       C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\include
         #   winnt.h, winsock2.h,
         #       C:\Program Files (x86)\Microsoft SDKs\Windows\v7.1A\Include
         #       C:\Program Files (x86)\Windows Kits\8.1\Include\um
@@ -147,37 +154,49 @@ class VS2015:
         target_platform_ver = config.get('target_platform_ver', '10.0.17763.0')
         if target_platform_ver == '7.1':
             if cmd == 'link':
-                ret.append(self._makeLibraryPath(r'C:\Program Files (x86)\Microsoft SDKs\Windows\v7.1A\Lib'))
+                ret.append(('libPath', [
+                        r'C:\Program Files (x86)\Microsoft SDKs\Windows\v7.1A\Lib'
+                        ]))
             elif cmd in ['cc', 'cxx']:
-                ret.extend(self._makeIncludePath(r'C:\Program Files (x86)\Microsoft SDKs\Windows\v7.1A\Include'))
+                ret.append(('includePath', [
+                            r'C:\Program Files (x86)\Microsoft SDKs\Windows\v7.1A\Include'
+                            ]))
+
         elif re.match(r'10\.\d+\.\d+\.\d+', target_platform_ver):
+            # default windows kits: 10.0.xxxxx.0
             if cmd == 'link':
-                ret.append(self._makeLibraryPath(fr'C:\Program Files (x86)\Windows Kits\10\Lib\{target_platform_ver}\ucrt\x86'))
-                ret.append(self._makeLibraryPath(fr'C:\Program Files (x86)\Windows Kits\10\Lib\{target_platform_ver}\um\x86'))
+                ret.append(('libPath', [
+                        fr'C:\Program Files (x86)\Windows Kits\10\Lib\{target_platform_ver}\ucrt\x86',
+                        fr'C:\Program Files (x86)\Windows Kits\10\Lib\{target_platform_ver}\um\x86',
+                        ]))
             elif cmd in ['cc', 'cxx']:
-                ret.extend(self._makeIncludePath(fr'C:\Program Files (x86)\Windows Kits\10\Include\{target_platform_ver}\um'))
-                ret.extend(self._makeIncludePath(fr'C:\Program Files (x86)\Windows Kits\10\Include\{target_platform_ver}\ucrt'))
+                ret.append(('includePath', [
+                        fr'C:\Program Files (x86)\Windows Kits\10\Include\{target_platform_ver}\ucrt',
+                        fr'C:\Program Files (x86)\Windows Kits\10\Include\{target_platform_ver}\um',
+                        fr'C:\Program Files (x86)\Windows Kits\10\Include\{target_platform_ver}\shared',
+                        ]))
+
         else:
             # default windows sdk: 8.1
             if cmd == 'link':
-                ret.append(self._makeLibraryPath(r'C:\Program Files (x86)\Windows Kits\8.1\Lib\winv6.3\um\x86')) # only 'um' exist
-                ret.append(self._makeLibraryPath(r'C:\Program Files (x86)\Microsoft SDKs\Windows\v7.1A\Lib'))
+                ret.append(('libPath', [
+                        r'C:\Program Files (x86)\Windows Kits\8.1\Lib\winv6.3\um\x86',  # only 'um' exist
+                        r'C:\Program Files (x86)\Microsoft SDKs\Windows\v7.1A\Lib',
+                        ]))
             elif cmd in ['cc', 'cxx']:
-                ret.extend(self._makeIncludePath(r'C:\Program Files (x86)\Windows Kits\8.1\Include\um'))
-                ret.extend(self._makeIncludePath(r'C:\Program Files (x86)\Microsoft SDKs\Windows\v7.1A\Include'))
+                ret.append(('includePath', [
+                        r'C:\Program Files (x86)\Windows Kits\8.1\Include\um',
+                        r'C:\Program Files (x86)\Windows Kits\8.1\Include\shared',
+                        r'C:\Program Files (x86)\Microsoft SDKs\Windows\v7.1A\Include',
+                        ]))
             # '/D', '_USING_V110_SDK71_',
 
         if 'dst' in args:
             if cmd == 'link':
-                part = args['dst']
-                t = args.get('targetType', 'executable')
-                if t == 'executable':
-                    part += '.exe'
-                elif t == 'sharedLib':
-                    part += '.dll'
-                else:
-                    part += '.lib'
-                ret.append(f'/OUT:"{part}"')
+                suffix = config.targetOS.getExecutableSuffix(
+                        args.get('targetType', 'executable'))
+                dst = args['dst'] + suffix
+                ret.append(f'/OUT:"{dst}"')
             elif cmd in ('cc', 'cxx'):
                 ret.append('/Fo:"{}"'.format(args['dst']))
             elif cmd == 'as':

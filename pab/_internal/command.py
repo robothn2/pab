@@ -32,9 +32,11 @@ class Command:
         self.appendixs = []
         self.cmds = [self.executable]  # executable must be first element
         for cmd_filter in filters.get(self.name, []):
+            if verbose:
+                print('- compositor:', cmd_filter)
             result = self._recursiveFilter(cmd_filter[1], compositors, kwargs)
             if verbose:
-                print('- compositor:', cmd_filter, '->', result)
+                print('->', result)
             self._addFilterResult(result)
 
         return kwargs.get('dst', None)
