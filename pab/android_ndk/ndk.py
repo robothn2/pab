@@ -24,6 +24,7 @@ class NDK:
                             'or ndk dir in `PATH` environment')
 
         self.executablePrefix = ''
+        self.libPaths = []
         self.toolchains = []
         rootToolchain = os.path.join(self.root, 'toolchains')
         for name in os.listdir(rootToolchain):
@@ -55,6 +56,16 @@ class NDK:
         if not os.path.exists(self.sysroot):
             raise Exception('Ndk sysroot not exist: %s' % self.sysroot)
 
+        # $NDK/platforms/android-21/arch-x86/usr/lib/libc.so
+        # $NDK/sources/cxx-stl/llvm-libc++/libs/x86/libc++_shared.so
+        self.rootCxxstl = os.path.join(
+                self.root, 'sources/cxx-stl', config.get('stl', 'llvm-libc++'))
+
+        self.libPaths = []
+        self.libPaths.append(os.path.join(self.sysroot, 'usr/lib'))
+        self.libPaths.append(os.path.join(self.rootCxxstl,
+                                          self.getCppLibSubfolder(config)))
+
     def registerAll(self, toolchain):
         toolchain.registerCommandFilter(self, ['cc', 'cxx', 'link'],
                                         ('sysroot', self.sysroot))
@@ -80,12 +91,21 @@ class NDK:
                     self._filterLinkToLib,
                 ])
 
-        if self.kwargs.get('compiler', 'llvm') == 'gcc':
+        if self.kwargs.get('compiler', 'gcc') == 'gcc':
             gcc = GCC(prefix=os.path.join(self.rootBin, self.executablePrefix),
                       suffix=self.executableSuffix)
             toolchain.registerPlugin(gcc)
         else:
             pass  # todo: llvm
+
+    def _search_file(self, filename, paths):
+        if not filename:
+            return None
+        for path in paths:
+            p = os.path.join(path, filename)
+            if os.path.exists(p):
+                return p
+        return None
 
     def _filterLinkToLib(self, args):
         if args['cmd'] != 'link':
@@ -99,13 +119,16 @@ class NDK:
             if crtStatic:
                 ret.append(('lib', 'stdc++'))
             else:
-                ret.append('libstdc++.so')
+                sopath = self._search_file('libstdc++.so', self.libPaths)
+                assert(sopath)
+                ret.append(sopath)
         else:
             if crtStatic:
                 ret.append(('lib', 'c'))
             else:
-                # $NDK/platforms/android-21/arch-x86/usr/lib/libc.so
-                ret.append('libc.so')
+                sopath = self._search_file('libc.so', self.libPaths)
+                assert(sopath)
+                ret.append(sopath)
         return ret
 
     def getToolchainName(self, config):

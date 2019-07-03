@@ -36,13 +36,16 @@ builder.build(target)
 
 # Todo
 * FolderTarget 支持从独立 py 文件内读取，每个开源项目有对应文件，文件力求简单易配置 (参考 skia/BUILD.gn)
-*   Plugin rename to Config, it includes: defines, libs, sources, ccflags, cxxflags, libPath, includePath, ldflags, etc.
 *   自动分析源文件名对应的 arch(根据目录名、名字), cpu(根据目录名、名字), cmd(根据后缀)，自动排除和当前配置不匹配的源文件
+*   由文件自己决定使用哪种 Command 处理，在编译失败时自动分析失败原因
+*   Plugin rename to Config, it includes: defines, libs, sources, ccflags, cxxflags, libPath, includePath, ldflags, etc.
+*   允许单个 Target 内既有 c 也有 c++ 源文件，分别组合不同 Config 进行编译
 *   通过 target 依赖性自动推导构建流程
 *   依据cmake, configure, 或者手动划分 targets 下的文件，文件可以归属于多个不同 target
 * 仅传入 cpu，解析出 arch 和 cpu (参考 ffmpeg/configure)
 *   自动链接不同指令集的相同函数名
 * 使用 llvm/clang 编译出 arm 架构的 so
+* 依据传入的 target_os 和 target_cpu 自动选择 toolchain, compiler
 * 支持 Config 反注册
 * 编译失败时提供建议
 *   头文件找不到：提示该头文件在哪里

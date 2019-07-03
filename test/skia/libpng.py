@@ -1,17 +1,18 @@
 # coding: utf-8
 
 libpng = {
+    'uri': '//third_party/libpng',
     'public_include_dirs': [
         ".",
         "libpng",
     ],
 
     'defines': [
-            "PNG_SET_OPTION_SUPPORTED"
-            ],
+        "PNG_SET_OPTION_SUPPORTED"
+    ],
     'deps': [
-            "//third_party/zlib",
-            ],
+        "//third_party/zlib",
+    ],
     'sources': [
         "png.c",
         "pngerror.c",
@@ -32,15 +33,15 @@ libpng = {
 }
 
 
-def libpng_dyn_setting(lib, env):
-    if (env.current_cpu == "arm" or env.current_cpu == "arm64"):
+def libpng_dyn_setting(lib):
+    if (target_cpu == "arm" or target_cpu == "arm64"):
         lib.sources += [
             "arm/arm_init.c",
             "arm/filter_neon_intrinsics.c",
             "arm/palette_neon_intrinsics.c",
             ]
 
-    if (env.current_cpu == "x86" or env.current_cpu == "x64"):
+    if (target_cpu == "x86" or target_cpu == "x64"):
         lib.defines += ["PNG_INTEL_SSE"]
         lib.sources += [
           "intel/filter_sse2_intrinsics.c",
@@ -48,6 +49,6 @@ def libpng_dyn_setting(lib, env):
         ]
 
 
-all_lib = [
-    (libpng, libpng_dyn_setting)
+export_libs = [
+    (libpng, libpng_dyn_setting),
 ]
