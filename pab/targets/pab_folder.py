@@ -1,7 +1,7 @@
 # coding: utf-8
 
 import os
-from pab.source_files import SourceFiles
+from pab._internal.source_file_detect import source_file_detect
 
 def _file_read(filename, mode='rU'):
     with open(filename, mode=mode) as f:
@@ -89,7 +89,7 @@ class PabTargets:
                 ])
 
 
-    def build(self, config, toolchain, args):
+    def build(self, request, toolchain, args):
         self._sort_targets()
 
         print('===Build', str(self))
@@ -115,9 +115,14 @@ class PabTargets:
                         os.makedirs(dst_folder)
                     created_dst_folders.append(sub_folder)
 
+                src = os.path.join(self.rootSource, file)
+                file_detect = source_file_detect(src)
+                if not file_detect.match(request):
+                    continue
+
                 out = toolchain.doCommand(
-                        'cxx', config=config,
-                        src=os.path.join(self.rootSource, file),
+                        file_detect.cmd, config=request,
+                        src=src,
                         dst=os.path.join(self.rootBuild, file) + '.o',
                         **self.kwargs)
                 if out:

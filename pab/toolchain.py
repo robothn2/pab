@@ -8,7 +8,6 @@ class Toolchain:
         self.cmds = {}
         self.cmdFilters = {}
         self.compositors = {}
-        self.sourceFileFilters = []
         self.plugins = []
         for plugin in plugins:
             self.registerPlugin(plugin)
@@ -30,14 +29,6 @@ class Toolchain:
             raise Exception('Found duplicate ArgCompositor')
         self.cmds[name] = (plugin.name, executable, custom_log)
         self.registerCommandFilter(plugin, name, extra_parts)
-
-    '''
-    SourceFileFilter 可以根据条件排除文件参与构建
-    '''
-    def registerSourceFileFilter(self, plugin, filter_func):
-        if not callable(filter_func):
-            raise Exception('Invalid SourceFileFilter')
-        self.sourceFileFilters.append((plugin, filter_func))
 
     '''
     CommandFilter 参与命令行参数构造
@@ -98,14 +89,8 @@ class Toolchain:
     def doCommand(self, cmd_name, **kwargs):
         if cmd_name not in self.cmds:
             return None  # unsupport Command
-        src = kwargs['src']
-        if isinstance(src, str):  # skip Command: link, ar
-            for file_filter in self.sourceFileFilters:
-                ret, reason = file_filter[1](kwargs)
-                if not ret:
-                    print('*', cmd_name, kwargs['src'], 'rejected:', reason)
-                    return None  # file reject by filter
 
+        src = kwargs['src']
         cmd_entry = self.cmds[cmd_name]
         cmd = Command(name=cmd_name, executable=cmd_entry[1])
         dst = cmd.preprocess(cmd=cmd_name, filters=self.cmdFilters,

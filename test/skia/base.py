@@ -14,7 +14,6 @@ lib = {
         '//third_party/zlib',
     ],
     'sources': [
-        '../build/build_config.h',
         'third_party/dmg_fp/dmg_fp.h',
         'third_party/dmg_fp/g_fmt.cc',
         'third_party/dmg_fp/dtoa_wrapper.cc',

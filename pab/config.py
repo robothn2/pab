@@ -32,26 +32,18 @@ class Config:
         return
 
     def registerAll(self, toolchain):
-        toolchain.registerSourceFileFilter(self, self._filterSourceFile)
         toolchain.registerCommandFilter(self, ['cc', 'cxx'],
                                         self._filterTargetOS)
+
+    def match(self, file_detect):
+        if file_detect.arch and self._arch != file_detect.arch:
+            return False
+        if file_detect.target_os and self.targetOS.name != file_detect.target_os:
+            return False
+        return True
 
     def _filterTargetOS(self, kwargs):
         o = self.targetOS.name
         if o == 'android':
             return ('define', '__ANDROID__')
         return []
-
-    def _filterSourceFile(self, args):
-        # todo: update args['dst']
-
-        src = args['src']
-        p, n = os.path.split(src)
-        pname = os.path.basename(p)
-        arch = self.archs.get(pname)
-        if arch and arch != self._arch:
-            return False, 'mismatched arch subfolder, expected {}, parsed {}'.format(self._arch, arch)
-
-        # todo: check file name
-        # _, ext = os.path.splitext(src)
-        return True, None
