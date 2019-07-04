@@ -2,6 +2,7 @@
 
 lib = {
     'uri': 'jsoncpp',
+    'type': 'sharedLib',
     'include_dirs': [
         '../../include',
     ],
@@ -24,9 +25,9 @@ lib = {
         'src/lib_json/json_reader.cpp',
         'src/lib_json/json_value.cpp',
         'src/lib_json/json_writer.cpp',
-        #'src/lib_json/json_tool.h',
-        #'src/lib_json/json_valueiterator.inl',
-        #'src/lib_json/version.h.in',
+        'src/lib_json/json_tool.h',
+        'src/lib_json/json_valueiterator.inl',
+        'src/lib_json/version.h.in',
     ],
 }
 

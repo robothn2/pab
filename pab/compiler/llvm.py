@@ -3,19 +3,19 @@
 import os
 
 
-class GCC:
+class LLVM:
     def __init__(self, **kwargs):
-        self.name = 'GCC'
+        self.name = 'LLVM'
         self.kwargs = kwargs
         self.prefix = kwargs.get('prefix', '')
         self.suffix = kwargs.get('suffix', '')
 
         self.cmds = {
-                'cc': (self.prefix + 'gcc' + self.suffix, 'src', ),
-                'cxx': (self.prefix + 'g++' + self.suffix, 'src', ),
+                'cc': (self.prefix + 'clang' + self.suffix, ),
+                'cxx': (self.prefix + 'clang++' + self.suffix, ),
                 'ar': (self.prefix + 'ar' + self.suffix, 'dst', '-rcs'),
-                'link': (self.prefix + 'gcc' + self.suffix, 'dst'),
-                #'ldd': (self.prefix + 'ld.bfd' + self.suffix, 'src', ),
+                'link': (self.prefix + 'clang' + self.suffix, 'dst'),
+                #'ldd': (self.prefix + 'ld.bfd' + self.suffix, ),
                 }
         self.cmdFilters = {
                 'cc': [
@@ -24,7 +24,6 @@ class GCC:
                 ],
                 'cxx': [
                     ['-c', '-Wall'],
-                    lambda args: '-std=' + args['request'].std,
                     self._filterSrcListAndDst,
                 ],
                 'ar': [
@@ -49,11 +48,11 @@ class GCC:
         return self.cmds.get(cmd_name)
 
     def filterCmd(self, cmd_name):
-        return self.cmdFilters.get(cmd_name, [])
+        return self.cmdFilters.get(cmd_name)
 
     def _filterSrcListAndDst(self, args):
         ret = []
-        request = args['request']
+        config = args['config']
         cmd = args['cmd']
 
         '''
@@ -69,12 +68,12 @@ class GCC:
         if 'dst' in args:
             dst = args['dst']
             if cmd == 'ar':
-                dst += request.targetOS.getExecutableSuffix('staticLib')
+                dst += config.targetOS.getExecutableSuffix('staticLib')
                 ret.append(dst)
             else:
                 if cmd == 'link':
                     targetType = args['targetType']
-                    dst += request.targetOS.getExecutableSuffix(targetType)
+                    dst += config.targetOS.getExecutableSuffix(targetType)
                     ret += ['-o', dst]
                     if targetType == 'sharedLib':
                         ret += ['-shared', '-fpic']

@@ -3,10 +3,10 @@
 import os
 
 class OS:
-    def __init__(self, **kwargs):
-        self.name = kwargs.get('target_os', os.sys.platform)
+    def __init__(self, os_name = None):
+        self.name = os_name if os_name else os.sys.platform
         self.suffix = {}
-        if self.name == 'win32':
+        if self.name == 'win' or self.name == 'win32':
             self.suffix['executable'] = '.exe'
             self.suffix['sharedLib'] = '.dll'
             self.suffix['staticLib'] = '.lib'
@@ -22,7 +22,7 @@ class OS:
             self.suffix['executable'] = ''
             self.suffix['sharedLib'] = '.dylib'
             self.suffix['staticLib'] = '.a'
-        elif self.name == 'darwin':
+        elif self.name == 'mac' or self.name == 'darwin':
             self.suffix['executable'] = ''
             self.suffix['sharedLib'] = '.so'
             self.suffix['staticLib'] = '.a'

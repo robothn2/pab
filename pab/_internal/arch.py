@@ -53,7 +53,7 @@ _instruction_map = {tag: inst[0]
              for tag in inst}  # map file tag to OS name
 
 
-class SourceFileDetect:
+class ArchDetect:
     def __init__(self, filepath):
         self.tags = []
         dirpath, filename = os.path.split(os.path.realpath(filepath))
@@ -77,17 +77,24 @@ class SourceFileDetect:
             if not self.arch:
                 self.arch = _arch_map.get(tag, None)
 
+    def __str__(self):
+        return '{} -> {}, {}, {}, {}'.format(self.tags,
+                self.cmd, self.target_os, self.arch, self.target_cpu)
+
     def match(self, *args):
         for cfg in args:
-            if cfg.match(self):
+            if hasattr(cfg, 'match') and cfg.match(self):
                 return True
         return False
 
 
-def source_file_detect(filepath):
-    return SourceFileDetect(filepath)
+def arch_detect(filepath):
+    return ArchDetect(filepath)
+
+def os_detect(osname):
+    return ArchDetect(osname).target_os
 
 
 if __name__ == '__main__':
-    d = source_file_detect('files/file_path_watcher_win.cc')
+    d = arch_detect('files/file_path_watcher_win.cc')
     print(d.cmd, d.target_os, d.arch, d.target_cpu, d.tags)

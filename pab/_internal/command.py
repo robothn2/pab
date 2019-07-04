@@ -31,13 +31,16 @@ class Command:
             print('> compositor of', self.name)
         self.appendixs = []
         self.cmds = [self.executable]  # executable must be first element
-        for cmd_filter in filters.get(self.name, []):
-            if verbose:
-                print('- compositor:', cmd_filter)
-            result = self._recursiveFilter(cmd_filter[1], compositors, kwargs)
-            if verbose:
-                print('->', result)
-            self._addFilterResult(result)
+        for cfg in filters:
+            if not hasattr(cfg, 'filterCmd'):
+                continue
+            for cmd_filter in cfg.filterCmd(self.name):
+                if verbose:
+                    print('- compositor:', cmd_filter)
+                result = self._recursiveFilter(cmd_filter, compositors, kwargs)
+                if verbose:
+                    print('->', result)
+                self._addFilterResult(result)
 
         return kwargs.get('dst', None)
 
@@ -50,8 +53,8 @@ class Command:
             print('-', cmdline)
         exitcode, output = subprocess.getstatusoutput(cmdline)
         if exitcode != 0:
-            print(cmdline)
             print(output)
+            print(cmdline)
             return False
         return True
 
@@ -75,8 +78,7 @@ class Command:
         elif isinstance(cmd_filter, tuple):
             assert(len(cmd_filter) == 2)
             compositor = compositors.get(cmd_filter[0], None)
-            assert(compositor and callable(compositor[1]))
-            compositor = compositor[1]
+            assert(callable(compositor))
             param = cmd_filter[1]
             if isinstance(param, str):
                 # ('sysroot', self.sysroot)
