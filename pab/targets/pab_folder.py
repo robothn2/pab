@@ -2,17 +2,7 @@
 
 import os
 from pab._internal.arch import arch_detect
-
-def _file_read(filename, mode='rU'):
-    with open(filename, mode=mode) as f:
-        # codecs.open() has different behavior than open() on python 2.6 so use
-        # open() and decode manually.
-        s = f.read()
-        try:
-            return s.decode('utf-8')
-        # AttributeError is for Py3 compatibility
-        except (UnicodeDecodeError, AttributeError):
-            return s
+from pab._internal.file_scope import parse_build_file
 
 class Target:
     def __init__(self, tar, rootSource):
@@ -50,8 +40,8 @@ class Target:
 class PabTargets:
     def __init__(self, **kwargs):
         self.name = 'PabTargets'
-        self.root = kwargs['root']
-        self.rootSource = kwargs['rootSource']
+        self.root = os.path.realpath(kwargs['root'])
+        self.rootSource = os.path.realpath(kwargs.get('rootSource', self.root))
         assert(os.path.exists(self.root) and os.path.exists(self.rootSource))
         self.kwargs = kwargs
         self.cmdFilters = {'cc': [], 'cxx': [],}
@@ -68,16 +58,7 @@ class PabTargets:
             if not file_name.endswith('.py'):
                 continue
 
-            global_scope = {}
-            local_scope = {}
-            content = _file_read(os.path.join(self.root, file_name))
-            try:
-                exec(content, global_scope, local_scope)
-            except SyntaxError as e:
-                print('* Exception occupied in', file_name, e)
-                continue
-
-            targets = local_scope.get('export_libs', [])
+            targets = parse_build_file(os.path.join(self.root, file_name))
             assert(isinstance(targets, list))
             for target in targets:
                 assert(isinstance(target, tuple))
@@ -96,6 +77,7 @@ class PabTargets:
         self.targetsSorted = list(self.targets.values())
 
     def _init_cmd_filters(self):
+        # support include paths & defines from constructor
         paths = []
         path = self.kwargs.get('includePath', None)
         if isinstance(path, str):

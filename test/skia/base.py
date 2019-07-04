@@ -531,10 +531,8 @@ lib = {
     ],
 }
 
-        # These warnings are needed for the files in third_party\dmg_fp.
 
-
-def libpng_dyn_setting(lib, options):
+def lib_dyn(lib, options):
     if not options('use_glib'):
         lib.sources -= [
             'nix',
@@ -625,5 +623,5 @@ def libpng_dyn_setting(lib, options):
         ]
 
 export_libs = [
-    (libpng, libpng_dyn_setting),
+    (lib, lib_dyn),
 ]

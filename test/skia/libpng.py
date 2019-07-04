@@ -33,7 +33,7 @@ libpng = {
 }
 
 
-def libpng_dyn_setting(lib):
+def libpng_dyn(lib, options):
     if (target_cpu == "arm" or target_cpu == "arm64"):
         lib.sources += [
             "arm/arm_init.c",
@@ -50,5 +50,5 @@ def libpng_dyn_setting(lib):
 
 
 export_libs = [
-    (libpng, libpng_dyn_setting),
+    (libpng, libpng_dyn),
 ]

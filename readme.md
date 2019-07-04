@@ -35,22 +35,16 @@ builder.build(target)
 * 支持一次链接超多 .o 文件
 
 # Todo
-*
-* Target 支持从独立 py 文件内读取，每个开源项目有对应文件，文件力求简单易配置 (参考 skia/BUILD.gn)
-*   自动分析源文件名对应的 arch(根据目录名、名字), cpu(根据目录名、名字), cmd(根据后缀)，自动排除和当前配置不匹配的源文件
-*   由文件自己决定使用哪种 Command 处理，(在编译失败时自动分析失败原因)
-*   Plugin rename to Config, it includes: defines, include_dirs, sources, ccflags, cxxflags, ldflags, lib_dirs, libs, etc.
-*   允许单个 Target 内既有 c 也有 c++ 源文件，分别组合不同 Config 进行编译
+* Target from standalone python scripts
+*   Config support: ccflags, cxxflags, ldflags, lib_dirs, libs
 *   通过 target 依赖性自动推导构建流程
-* 仅传入 cpu，解析出 arch 和 cpu (参考 ffmpeg/configure)
 * 使用 llvm/clang 编译出 arm 架构的 so
-* 依据传入的 target_os 和 target_cpu 自动选择 toolchain, compiler
 * 显示变量的多途径来源和变化历史
-* 编译失败时提供建议
-*   头文件找不到：提示该头文件在哪里
-*   宏找不到：
-*   链接时函数找不到：提示该函数需要链接哪个 lib
-* 构建流程支持交互模式，失败时可以暂停整个流程，解决后可以继续执行
-* 构建流程支持并行模式，尽可能快的执行，但失败时直接退出，无法继续执行
-* 输出 ninja 脚本
+* suggestion on fails:
+*   header not found: search header file in system
+*   macro not found:
+*   unresolved referenced function: link to which lib
+* interactive build mode: pause build flow, can resume it too
+* parellel build mode: as possible as soon, exit on fails, cannot resume
+* output ninja build script
 
