@@ -39,18 +39,18 @@ _arch_map = {tag: arch[0]
              for arch in _archtag_filters
              for tag in arch}  # map file tag to OS name
 
-_insttag_filters = [
-    ['neon', 'vfp'],
-    ['arm', 'armv5te', 'armv7a', 'armeabi', 'armeabi-v7a'],
-    ['x86', 'x64', 'i386', 'i686'],
-    ['mips', 'mipsel', 'mipseb'],
-    ['ppc'],
-    ['sh4', 'sh'],
-    ['sparc'],
+_opt_tag_filters = [
+    ['asm', 'x86asm', 'inline-asm', ],
+    ['neon', 'vfp', 'armv5te', 'armv6', 'armv6t2', ],
+    ['fast-unaligned', 'vsx', 'msa', 'xop'],
+    ['fma3', 'fma4', 'aesni', ],
+    ['mmx', 'mmxext', 'sse', 'sse2', 'sse3', 'sse4', 'sse42', 'avx', 'avx2', 'avx512'],
+    ['altivec', 'amd3dnow', 'amd3dnowext', 'power8'],
+    ['mipsdsp', 'mipsdspr2', 'mipsfpu', ],
 ]
-_instruction_map = {tag: inst[0]
-             for inst in _insttag_filters
-             for tag in inst}  # map file tag to OS name
+_optimize_map = {tag: opt[0]
+             for opt in _opt_tag_filters
+             for tag in opt}  # map file tag to OS name
 
 
 class ArchDetect:
@@ -68,12 +68,12 @@ class ArchDetect:
         self.target_os = None
         self.arch = None
         self.target_cpu = None
-        self.instruction = None
+        self.optimize = None
         for tag in self.tags:
             if not self.target_os:
                 self.target_os = _os_map.get(tag, None)
-            if not self.instruction:
-                self.instruction = _instruction_map.get(tag, None)
+            #if not self.optimize:
+            #    self.optimize = _optimize_map.get(tag, None)
             if not self.arch:
                 self.arch = _arch_map.get(tag, None)
 

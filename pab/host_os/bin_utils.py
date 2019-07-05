@@ -1,0 +1,15 @@
+# coding: utf-8
+
+
+class BinUtils:
+    def __init__(self, **kwargs):
+        self.name = 'BinUtils'
+        self.kwargs = kwargs
+        self.suffix = kwargs.get('suffix', '')
+
+        self.cmds = {
+                'file': ('file' + self.suffix, ),  # C:\msys64\usr\bin
+                }
+
+    def queryCmd(self, cmd_name):
+        return self.cmds.get(cmd_name)

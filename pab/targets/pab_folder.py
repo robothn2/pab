@@ -113,8 +113,6 @@ class PabTargets:
         self._sort_targets()
 
         print('===Build', str(self))
-        if not os.path.exists(request.rootBuild):
-            os.makedirs(request.rootBuild)
 
         objs = []
         created_dst_folders = []
@@ -124,6 +122,7 @@ class PabTargets:
             configs.append(target)
             print('==Target:', target.uri)
             for file in target.get('sources', []):
+                # cache for sub folders
                 sub_folder = os.path.dirname(file)
                 if sub_folder and sub_folder not in created_dst_folders:
                     dst_folder = os.path.join(request.rootBuild, sub_folder)
@@ -131,26 +130,29 @@ class PabTargets:
                         os.makedirs(dst_folder)
                     created_dst_folders.append(sub_folder)
 
-                src = os.path.join(self.rootSource, file)
+                src = os.path.realpath(os.path.join(self.rootSource, file))
                 detected = arch_detect(src)
                 if not detected.match(request):
                     print('* skipped', file, str(detected))
                     continue
 
-                out = builder.execCommand(
-                        detected.cmd, request=request, src=src,
-                        dst=os.path.join(request.rootBuild, file) + '.o',
-                        **self.kwargs)
-                if out:
-                    objs.append(out)
+                dst = os.path.join(request.rootBuild, file) + '.o'
+                result = builder.execCommand(
+                            detected.cmd, request=request,
+                            src=src, dst=dst,
+                            **self.kwargs)
+                if result[0]:
+                    result = builder.execCommand('file', src=dst)
+                    print(result[1])
+                    objs.append(dst)
 
             if len(objs) > 0:
-                dst = builder.execCommand(
-                        'link',
-                        request=request, src=objs,
-                        dst=os.path.join(request.rootBuild, target.name),
-                        targetType=target.type,
-                        **self.kwargs)
+                builder.execCommand(
+                    'link',
+                    request=request, src=objs,
+                    dst=os.path.join(request.rootBuild, target.name),
+                    targetType=target.type,
+                    **self.kwargs)
 
                 # builder.execCommand('ldd', request=request, src=dst)
 

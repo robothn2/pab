@@ -8,7 +8,8 @@ lib = {
         '..',
     ],
     'defines': [
-        'BASE_IMPLEMENTATION'
+        'BASE_IMPLEMENTATION',
+        '_GLIBCXX_PERMIT_BACKWARD_HASH',
     ],
     'deps': [
         '//third_party/zlib',

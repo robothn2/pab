@@ -3,7 +3,7 @@
 import os
 import re
 from pab.compiler.gcc import GCC
-from pab.compiler.llvm import LLVM
+from pab.compiler.clang import Clang
 
 
 class NDKStl:
@@ -117,9 +117,9 @@ class NDK:
                       suffix=request.hostOS.getExecutableSuffix())
             return True, [gcc]
 
-        llvm = LLVM(prefix=os.path.join(self.root, 'toolchains/llvm/prebuilt/windows-x86_64/bin'),
+        clang = Clang(prefix=os.path.join(self.root, 'toolchains/llvm/prebuilt/windows-x86_64/bin'),
                     suffix=request.hostOS.getExecutableSuffix())
-        return True, [llvm]
+        return True, [clang]
 
     def queryCmd(self, cmd_name):
         return self.cmds.get(cmd_name)
@@ -142,15 +142,12 @@ class NDK:
 
         ret = []
         std = args.get('std', 'c11')
-        stl = args.get('stl', 'gnu-libstdc++')
         crtStatic = args.get('crtStatic', False)
         if std.startswith('c++'):
             if crtStatic:
-                ret.append(('lib', 'stdc++'))
+                ret.append(('lib', self.rootStl.static_libs))
             else:
-                sopath = self._search_file('libstdc++.so', self.libPaths)
-                assert(sopath)
-                ret.append(sopath)
+                ret.extend(self.rootStl.shared_libs)
         else:
             if crtStatic:
                 ret.append(('lib', 'c'))

@@ -11,19 +11,20 @@ class GCC:
         self.suffix = kwargs.get('suffix', '')
 
         self.cmds = {
-                'cc': (self.prefix + 'gcc' + self.suffix, 'src', ),
-                'cxx': (self.prefix + 'g++' + self.suffix, 'src', ),
+                'cc': (self.prefix + 'gcc' + self.suffix, 'src', '-c', ),
+                'cxx': (self.prefix + 'g++' + self.suffix, 'src', '-c', ),
                 'ar': (self.prefix + 'ar' + self.suffix, 'dst', '-rcs'),
                 'link': (self.prefix + 'gcc' + self.suffix, 'dst'),
-                #'ldd': (self.prefix + 'ld.bfd' + self.suffix, 'src', ),
+                'ldd': (self.prefix + 'ld.bfd' + self.suffix, ),
                 }
         self.cmdFilters = {
                 'cc': [
-                    ['-c', '-Wall'],
+                    ['-Wall'],
+                    lambda args: '-std=' + args['request'].std,
                     self._filterSrcListAndDst,
                 ],
                 'cxx': [
-                    ['-c', '-Wall'],
+                    ['-Wall'],
                     lambda args: '-std=' + args['request'].std,
                     self._filterSrcListAndDst,
                 ],
@@ -87,8 +88,8 @@ class GCC:
             if isinstance(src, str):
                 ret.append(src)
             elif isinstance(src, list):
-                tmp_file = os.path.join(os.path.dirname(src[0]),
-                                        'src_list.txt')
+                # write all source file path into file, and use @file
+                tmp_file = os.path.join(request.rootBuild, 'src_list.txt')
                 with open(tmp_file, 'w', encoding='utf-8') as f:
                     for o in src:
                         o = os.path.realpath(o)

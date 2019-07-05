@@ -22,7 +22,7 @@ class Command:
     def __str__(self):
         return 'Command:'
 
-    def preprocess(self, **kwargs):
+    def preprocess(self, *extra_args, **kwargs):
         filters = kwargs['filters']
         compositors = kwargs['compositors']
         verbose = kwargs.get('verbose', False)
@@ -31,16 +31,31 @@ class Command:
             print('> compositor of', self.name)
         self.appendixs = []
         self.cmds = [self.executable]  # executable must be first element
+        # extra command args by provider
+        for arg in extra_args:
+            self._addCmdPart(arg)
+
+        cnt_before_filter = len(self.cmds) + len(self.appendixs)
         for cfg in filters:
             if not hasattr(cfg, 'filterCmd'):
                 continue
-            for cmd_filter in cfg.filterCmd(self.name):
+            resultByCfg = cfg.filterCmd(self.name)
+            if not resultByCfg:
+                continue
+
+            for cmd_filter in resultByCfg:
                 if verbose:
                     print('- compositor:', cmd_filter)
                 result = self._recursiveFilter(cmd_filter, compositors, kwargs)
                 if verbose:
                     print('->', result)
-                self._addFilterResult(result)
+                self._addListOrStr(result)
+
+        if cnt_before_filter == len(self.cmds) + len(self.appendixs):
+            # support simple command only accept 'src' parameter'
+            src = kwargs.get('src')
+            if src:
+                self._addListOrStr(src)
 
         return kwargs.get('dst', None)
 
@@ -53,10 +68,10 @@ class Command:
             print('-', cmdline)
         exitcode, output = subprocess.getstatusoutput(cmdline)
         if exitcode != 0:
-            print(output)
+            print(output)  # todo: analyze error
             print(cmdline)
-            return False
-        return True
+            return False, output
+        return True, output
 
     def _recursiveFilter(self, cmd_filter, compositors, kwargs):
         if isinstance(cmd_filter, str):
@@ -110,7 +125,7 @@ class Command:
         elif isinstance(result, str):
             listExist.append(result)
 
-    def _addFilterResult(self, result):
+    def _addListOrStr(self, result):
         if isinstance(result, list):
             for part in result:
                 self._addCmdPart(part)

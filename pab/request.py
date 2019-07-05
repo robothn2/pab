@@ -1,5 +1,6 @@
 # coding: utf-8
 
+import os
 from ._internal.arch import arch_detect, os_detect
 from ._internal.os import OS
 
@@ -12,9 +13,11 @@ class Request:
         self.targetOS = OS(os_detect(kwargs['target_os']))
         self.target_os = self.targetOS.name
         self.arch = arch_detect(kwargs['target_cpu']).arch
-        self.rootBuild = kwargs['root_build']
         self.std = kwargs.get('std', 'c++11')
         self.stl = kwargs.get('stl', 'gnu-libstdc++')
+        self.rootBuild = os.path.realpath(kwargs['root_build'])
+        if not os.path.exists(self.rootBuild):
+            os.makedirs(self.rootBuild)
 
     def hasMember(self, memberName):
         return memberName in self.cfg
