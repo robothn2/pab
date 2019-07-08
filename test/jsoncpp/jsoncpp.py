@@ -2,6 +2,7 @@
 
 lib = {
     'uri': 'jsoncpp',
+    'source_base_dir': r'D:\src\frameflow\third_party\repo\jsoncpp',
     'type': 'sharedLib',
     'include_dirs': [
         '../../include',

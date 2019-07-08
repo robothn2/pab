@@ -13,7 +13,6 @@ class Request:
         self.targetOS = OS(os_detect(kwargs['target_os']))
         self.target_os = self.targetOS.name
         self.arch = arch_detect(kwargs['target_cpu']).arch
-        self.std = kwargs.get('std', 'c++11')
         self.stl = kwargs.get('stl', 'gnu-libstdc++')
         self.rootBuild = os.path.realpath(kwargs['root_build'])
         if not os.path.exists(self.rootBuild):

@@ -35,24 +35,46 @@ class ItemList(list):
         return self
 
 
-class FileScope(dict):
+class FileContext(dict):
     def __init__(self, *args, **kwargs):
-        dict.__init__(kwargs)
-        self.defines = ItemList()
-        self.include_dirs = ItemList()
-        self.sources = ItemList()
-        self.group_vars = args
+        dict.__init__({})
+
+        variables = ['defines', 'public_include_dirs', 'include_dirs',
+                     'sources', 'ccflags', 'cxxflags', 'ldflags',
+                     'lib_dirs', 'libs', 'deps',
+                     ]
+        for v in variables:
+            self[v] = ItemList()
+
+        for k, v in kwargs.items():
+            if isinstance(v, str):
+                self[k] = v
+            elif isinstance(v, (list, tuple)):
+                if k in self:
+                    self[k] += v
+                else:
+                    self[k] = ItemList(v)
+
+        self.group_vars = list(args)
 
     def __getattr__(self, name):
+        if name in self:
+            return self[name]
+        return None
+
+    def getVar(self, name):
         for v in self.group_vars:
             if name in v:
                 return v[name]
         return None
 
+    def getOption(self, name):
+        return False
+
 
 def parse_build_file(filepath):
     global_scope = {}
-    local_scope = FileScope()
+    local_scope = {}
     content = _file_read(filepath)
     try:
         exec(content, global_scope, local_scope)

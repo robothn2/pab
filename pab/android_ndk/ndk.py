@@ -88,7 +88,7 @@ class NDK:
 
         self.cmdFilters = {
                 'cc': [
-                    ('define', '__ANDROID__'),
+                    ('define', ['__ANDROID__', 'ANDROID']),
                     ('sysroot', self.sysroot),
                     ('sysroot', os.path.join(self.root, 'sysroot')),
                     ('includePath', lambda kwargs: os.path.join(
@@ -97,7 +97,7 @@ class NDK:
                         self.getSysrootIncludeSubfolder(kwargs['request']))),
                 ],
                 'cxx': [
-                    ('define', '__ANDROID__'),
+                    ('define', ['__ANDROID__', 'ANDROID']),
                     ('sysroot', self.sysroot),
                     ('sysroot', os.path.join(self.root, 'sysroot')),
                     ('includePath', lambda kwargs: os.path.join(
@@ -141,9 +141,8 @@ class NDK:
             return
 
         ret = []
-        std = args.get('std', 'c11')
         crtStatic = args.get('crtStatic', False)
-        if std.startswith('c++'):
+        if args['target'].std.startswith('c++'):
             if crtStatic:
                 ret.append(('lib', self.rootStl.static_libs))
             else:

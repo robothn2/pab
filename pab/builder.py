@@ -1,6 +1,7 @@
 # coding: utf-8
 
 from ._internal.command import Command
+from ._internal.results import Results
 from .host_os.bin_utils import BinUtils
 
 
@@ -8,6 +9,7 @@ class Builder:
     def __init__(self, request, *configs):
         self.initialConfigs = configs
         self.request = request
+        self.results = Results()
         self.configs = []
         self.compositor = None
         self.binutils = BinUtils(suffix=request.hostOS.getExecutableSuffix())
@@ -41,25 +43,31 @@ class Builder:
         for cfg in self.configs:
             if hasattr(cfg, 'compositors'):
                 self.compositor = cfg.compositors
-                print(cfg.name, 'is compositor')
+                print('compositor:', cfg.name)
         print('enabled config:', [cfg.name for cfg in self.configs])
 
     def build(self, target, **kwargs):
         self._collect_available_configs()
 
+        self.results.reset(title=str(target))
         self.configs.append(target)
+
         target.build(self.request, self.configs, self, kwargs)
+
         self.configs.remove(target)
+        self.results.dump()
 
     def execCommand(self, cmd_name, **kwargs):
         if not cmd_name:
             return (False, None)
         cmd_entry = self._find_cmd_entry(cmd_name)
         assert(isinstance(cmd_entry, tuple))
-        cmd = Command(name=cmd_name, executable=cmd_entry[0])
+        cmd = Command(name=cmd_name, executable=cmd_entry[0],
+                      results=self.results)
         cmd.preprocess(*cmd_entry[2:],  # extra command args by provider
-                       cmd=cmd_name, filters=self.configs,
-                       compositors=self.compositor, **kwargs)
+                       cmd=cmd_name,
+                       filters=self.configs, compositors=self.compositor,
+                       **kwargs)
 
         src = kwargs['src']
         dst = kwargs.get('dst')  # maybe non-exist

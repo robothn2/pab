@@ -20,12 +20,10 @@ class GCC:
         self.cmdFilters = {
                 'cc': [
                     ['-Wall'],
-                    lambda args: '-std=' + args['request'].std,
                     self._filterSrcListAndDst,
                 ],
                 'cxx': [
                     ['-Wall'],
-                    lambda args: '-std=' + args['request'].std,
                     self._filterSrcListAndDst,
                 ],
                 'ar': [
@@ -74,10 +72,10 @@ class GCC:
                 ret.append(dst)
             else:
                 if cmd == 'link':
-                    targetType = args['targetType']
-                    dst += request.targetOS.getExecutableSuffix(targetType)
+                    target = args['target']
+                    dst += target.getSuffix(request)
                     ret += ['-o', dst]
-                    if targetType == 'sharedLib':
+                    if target.isSharedLib():
                         ret += ['-shared', '-fpic']
                 else:
                     ret += ['-o', dst]

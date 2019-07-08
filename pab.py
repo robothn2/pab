@@ -11,14 +11,11 @@ if __name__ == '__main__':
     compiler = NDK(path='d:/lib/android-ndk-r14b', platform=24, compiler='clang')
     request = Request(target_os='android',
                       target_cpu='arm64',
-                      std='c++11',
                       stl='llvm-libc++',  # 'gnu-libstdc++', 'llvm-libc++'
                       root_build='D:/lib/build')
 
-    target = PabTargets(
-            # verbose=True,
-            root='test/jsoncpp',  # 'test/skia',
-            rootSource=r'D:\src\frameflow\third_party\repo\jsoncpp', # D:\src\frameflow\third_party\repo\jsoncpp
-            )
+    target = PabTargets(root='test/skia/libpng.py',
+                        # verbose=True,
+                        )
     builder = Builder(request, compiler)
     builder.build(target, top=0, check=False)

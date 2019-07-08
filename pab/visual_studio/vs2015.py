@@ -83,7 +83,8 @@ class VS2015:
 
     def _filterByConfig(self, args):
         ret = []
-        config = args['config']
+        request = args['request']
+        target = args['target']
         cmd = args['cmd']
 
         if cmd in ['cc', 'cxx']:
@@ -99,17 +100,17 @@ class VS2015:
                     '/Gd',  # default call: /Gd = __cdecl, /Gr = __fastcall, /Gz = __stdcall, /Gv = __vectorcall
                     # '/analyze-', '/errorReport:queue'
                     ]
-            if config.hasMember('debug'):
+            if request.hasMember('debug'):
                 ret += ['/D', 'DEBUG', '/D', '_DEBUG']
                 # Multithreaded static debug/release
-                ret.append('/MTd' if config.hasMember('crt_static') else '/MT')
+                ret.append('/MTd' if request.hasMember('crt_static') else '/MT')
             else:
                 ret += ['/D', 'NDEBUG',
                         '/EHsc',  # enable c++ execption
                         ]
                 # runtime library linkage
                 # Multithreaded DLL debug/release
-                ret.append('/MDd' if config.hasMember('crt_static') else '/MD')
+                ret.append('/MDd' if request.hasMember('crt_static') else '/MD')
 
             if cmd == 'cc':
                 ret.append('/TC')   # compile as C code
@@ -151,7 +152,7 @@ class VS2015:
         #       C:\Program Files (x86)\Windows Kits\10\Lib\10.0.17763.0\ucrt\x86
         #   mfc140u.lib
         #       C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\atlmfc\lib
-        target_platform_ver = config.get('target_platform_ver', '10.0.17763.0')
+        target_platform_ver = request.get('target_platform_ver', '10.0.17763.0')
         if target_platform_ver == '7.1':
             if cmd == 'link':
                 ret.append(('libPath', [
@@ -193,8 +194,7 @@ class VS2015:
 
         if 'dst' in args:
             if cmd == 'link':
-                suffix = config.targetOS.getExecutableSuffix(
-                        args.get('targetType', 'executable'))
+                suffix = target.getSuffix(request)
                 dst = args['dst'] + suffix
                 ret.append(f'/OUT:"{dst}"')
             elif cmd in ('cc', 'cxx'):

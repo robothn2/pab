@@ -5,14 +5,14 @@ import os
 
 ''' xcode clang compile command line:
 /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang \
- -c -x c++ -arch x86_64 -mmacosx-version-min=10.14 -g \
+ -c -x c++ -arch x86_64 -O0 -g -mmacosx-version-min=10.14 \
  -std=c++11 -MMD -MT dependencies \
  -MF /Users/nsw/src/frameflow/third_party/work/jsoncpp-arm64/src/test_lib_json/JSONCPP.build/Debug/jsoncpp_test.build/Objects-normal/x86_64/main.d \
  -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk \
- -fasm-blocks -fstrict-aliasing \
+ -fasm-blocks -fstrict-aliasing -fcolor-diagnostics \
  --serialize-diagnostics /Users/nsw/src/frameflow/third_party/work/jsoncpp-arm64/src/test_lib_json/JSONCPP.build/Debug/jsoncpp_test.build/Objects-normal/x86_64/main.dia \
- -fmessage-length=142 -fdiagnostics-show-note-include-stack -fmacro-backtrace-limit=0 -fcolor-diagnostics \
- -Wno-trigraphs -fpascal-strings -O0 -Wno-missing-field-initializers -Wno-missing-prototypes -Wno-return-type -Wno-non-virtual-dtor -Wno-overloaded-virtual -Wno-exit-time-destructors \
+ -fmessage-length=142 -fdiagnostics-show-note-include-stack -fmacro-backtrace-limit=0 \
+ -Wno-trigraphs -fpascal-strings -Wno-missing-field-initializers -Wno-missing-prototypes -Wno-return-type -Wno-non-virtual-dtor -Wno-overloaded-virtual -Wno-exit-time-destructors \
  -Wno-missing-braces -Wparentheses -Wswitch -Wno-unused-function -Wno-unused-label -Wno-unused-parameter -Wno-unused-variable -Wunused-value -Wno-empty-body -Wno-uninitialized \
  -Wno-unknown-pragmas -Wno-shadow -Wno-four-char-constants -Wno-conversion -Wno-constant-conversion -Wno-int-conversion -Wno-bool-conversion -Wno-enum-conversion -Wno-float-conversion \
  -Wno-non-literal-null-conversion -Wno-objc-literal-conversion -Wno-shorten-64-to-32 -Wno-newline-eof -Wno-c++11-extensions -Wdeprecated-declarations -Winvalid-offsetof \
@@ -48,12 +48,10 @@ class Clang:
         self.cmdFilters = {
                 'cc': [
                     ['-Wall'],
-                    lambda args: '-std=' + args['request'].std,
                     self._filterSrcListAndDst,
                 ],
                 'cxx': [
                     ['-Wall'],
-                    lambda args: '-std=' + args['request'].std,
                     self._filterSrcListAndDst,
                 ],
                 'ar': [
@@ -94,10 +92,10 @@ class Clang:
                 ret.append(dst)
             else:
                 if cmd == 'link':
-                    targetType = args['targetType']
-                    dst += request.targetOS.getExecutableSuffix(targetType)
+                    target = args['target']
+                    dst += target.getSuffix(request)
                     ret += ['-o', dst]
-                    if targetType == 'sharedLib':
+                    if target.isSharedLib():
                         ret += ['-shared', '-fpic']
                 else:
                     ret += ['-o', dst]

@@ -12,7 +12,6 @@ from pab.android_ndk.ndk import NDK
 compiler = NDK(path='d:/lib/android-ndk-r14b', platform=24, compiler='clang')
 request = Request(target_os='android',
                   target_cpu='x86_64',
-                  std='c++11',
                   stl='gnu-libstdc++',
                   root_build='D:/lib/build')
 
@@ -35,13 +34,11 @@ builder.build(target, top=0, check=False)
 * 支持一次链接超多 .o 文件
 
 # Todo
-* 统计 Target 构建结果有哪些文件被略过；哪些文件出错，错误原因显示第一条；链接时少掉哪些引用
+* 统计 Target 链接时少掉哪些引用
 * OS 可能有多个标志，例如：MacOS 还会有 Posix
-* Target from standalone python scripts
-*   Config support: ccflags, cxxflags, ldflags, lib_dirs, libs
-*   通过 target 依赖性自动推导构建流程
-* 使用 llvm/clang 编译出 arm 架构的 so
-* 显示变量的多途径来源和变化历史
+* 通过 target 依赖性自动推导构建流程
+* 使用 clang 编译出 arm 架构的 so
+* 显示变量的来源和变化历史
 * suggestion on fails:
 *   header not found: search header file in system
 *   macro not found:

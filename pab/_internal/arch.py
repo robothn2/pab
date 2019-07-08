@@ -84,8 +84,8 @@ class ArchDetect:
     def match(self, *args):
         for cfg in args:
             if hasattr(cfg, 'match') and cfg.match(self):
-                return True
-        return False
+                return (True, None)
+        return (False, 'OS(%s), CPU(%s) not match' % (self.target_os, self.target_cpu))
 
 
 def arch_detect(filepath):

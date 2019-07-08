@@ -2,13 +2,21 @@
 
 lib = {
     'uri': 'base',
+    'source_base_dir': 'd:/lib/chromium/base',
     'public_include_dirs': [
     ],
     'include_dirs': [
         '..',
     ],
     'defines': [
-        'BASE_IMPLEMENTATION'
+        'BASE_IMPLEMENTATION',
+    ],
+    'std': 'c++11',
+    'ccflags': [
+    ],
+    'cxxflags': [
+        '-fexceptions',
+        '-frtti',
     ],
     'deps': [
         '//third_party/zlib',
@@ -532,8 +540,10 @@ lib = {
 }
 
 
-def lib_dyn(lib, options):
-    if not options('use_glib'):
+def lib_dyn(lib, context):
+    target_os = context.getVar('target_os')
+    # target_cpu = context.getVar('target_cpu')
+    if not context.getOption('use_glib'):
         lib.sources -= [
             'nix',
         ]
@@ -543,7 +553,7 @@ def lib_dyn(lib, options):
             'message_pump_aurax11.cc',
         ]
 
-    if not options('toolkit_uses_gtk'):
+    if not context.getOption('toolkit_uses_gtk'):
         lib.sources -= [
             'message_pump_gtk.cc',
         ]
@@ -580,8 +590,6 @@ def lib_dyn(lib, options):
             'sys_string_conversions_mac',
             'time_mac',
             'worker_pool_mac',
-
-            'process_util_ios.mm',
         ],
         # Exclude all process_util except the minimal implementation
         # needed on iOS (mostly for unit tests).
@@ -589,9 +597,8 @@ def lib_dyn(lib, options):
             'process_util',
         ],
     if target_os == 'mac':
-        lib.sources += [
-            'mac/scoped_aedesc.h'
-        ]
+        pass
+
     if target_os == 'mac' or target_os == 'ios':
         lib.sources -= [
             'files/file_path_watcher_stub.cc',

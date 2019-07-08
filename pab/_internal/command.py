@@ -1,6 +1,7 @@
 # coding: utf-8
 
 import subprocess
+from pab._internal.output_analyze import output_analyze
 
 '''
 A Command consists of multiple parts, each one includes many CommandPart which
@@ -18,9 +19,10 @@ class Command:
         self.cmds = []
         self.appendixs = []  # collect args which including `"`
         self.dst = ''
+        self.results = kwargs['results']
 
     def __str__(self):
-        return 'Command:'
+        return 'Command(%s)' % self.name
 
     def preprocess(self, *extra_args, **kwargs):
         filters = kwargs['filters']
@@ -68,9 +70,8 @@ class Command:
             print('-', cmdline)
         exitcode, output = subprocess.getstatusoutput(cmdline)
         if exitcode != 0:
-            print(output)  # todo: analyze error
-            print(cmdline)
-            return False, output
+            error = output_analyze(cmdline, output)
+            return False, error
         return True, output
 
     def _recursiveFilter(self, cmd_filter, compositors, kwargs):
@@ -111,10 +112,8 @@ class Command:
 
             elif callable(param):
                 # ('includePath', lambda kwargs: kwargs['config'].getArch())
-                result = param(kwargs)
-                result2 = compositor(result, kwargs)
-                # print('-', result, result2)
-                return self._recursiveFilter(result2, compositors, kwargs)
+                result = compositor(param(kwargs), kwargs)
+                return self._recursiveFilter(result, compositors, kwargs)
 
         raise Exception('Invalid filter:', cmd_filter)
 
