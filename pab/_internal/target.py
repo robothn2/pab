@@ -1,7 +1,9 @@
 # coding: utf-8
 
 import os
-from pab._internal.arch import arch_detect
+import re
+import shutil
+from pab._internal.arch import file_detect
 from pab._internal.file_scope import FileContext
 
 class Target:
@@ -11,7 +13,7 @@ class Target:
         self.setting = FileContext(**tar[0], **request.kwargs)
         self.uri = self.setting['uri']
         self.type = self.setting.get('type', 'staticLib')
-        self.name = os.path.basename(self.uri)
+        self.name = re.split(r'[./\\]', self.uri)[-1]
         self.std = self.setting.get('std', 'c++11')  # c99, c11, c++11, c++17
         self.rootSource = rootSource
         if not self.rootSource:
@@ -60,6 +62,9 @@ class Target:
     def isSharedLib(self):
         return self.type == 'sharedLib'
 
+    def isStaticLib(self):
+        return self.type == 'staticLib'
+
     def filterCmd(self, cmd_name):
         return self.cmdFilters.get(cmd_name, [])
 
@@ -74,6 +79,9 @@ class Target:
         created_dst_folders = []
         for file in self.get('sources', []):
             # cache for sub folders
+            if not isinstance(file, str):
+                print('invalid file:', file)
+                continue
             sub_folder = os.path.dirname(file)
             if sub_folder and sub_folder not in created_dst_folders:
                 dst_folder = os.path.join(self.request.rootBuild, sub_folder)
@@ -82,7 +90,7 @@ class Target:
                 created_dst_folders.append(sub_folder)
 
             src = os.path.realpath(os.path.join(self.rootSource, file))
-            detected = arch_detect(src)
+            detected = file_detect(src)
             if not detected.cmd:
                 builder.results.unhandled(file)
                 continue
@@ -105,13 +113,40 @@ class Target:
             else:
                 builder.results.error(file, result[1])
 
-        if len(objs) > 0:
-            result = builder.execCommand(
-                'link',
-                request=self.request, src=objs,
-                dst=os.path.join(self.request.rootBuild, self.name),
-                target=self, **targetsArgs)
-            if result[0]:
-                builder.results.succeeded(self.name)
+        if len(objs) == 0:
+            return
 
-            # builder.execCommand('ldd', request=self.request, src=dst)
+        executable = os.path.join(self.request.rootBuild, 'lib',
+                                  self.request.targetOS.getFullName(self.name))
+        dstfolder = os.path.dirname(executable)
+        if not os.path.exists(dstfolder):
+            os.makedirs(dstfolder)
+
+        result = builder.execCommand(
+            'ar' if self.isStaticLib() else 'link',
+            request=self.request, src=objs,
+            dst=executable,
+            target=self, **targetsArgs)
+        if not result[0]:
+            builder.results.error(file, result[1])
+            return
+
+        builder.results.succeeded(executable)
+        result = builder.execCommand('file', src=executable)
+        print(result[1])
+
+        # copy public headers to $BUILD/include
+        rootHeaders = os.path.join(self.request.rootBuild,
+                                   'include', self.setting.install_header_dir)
+        for header_file in self.setting.public_headers:
+            dst_file = header_file
+            if dst_file.startswith('include/'):
+                dst_file = dst_file[8:]
+            if dst_file.startswith(self.setting.install_header_dir):
+                dst_file = dst_file[len(self.setting.install_header_dir)+1:]
+            dst = os.path.join(rootHeaders, dst_file)
+            dstfolder = os.path.dirname(dst)
+            if not os.path.exists(dstfolder):
+                os.makedirs(dstfolder)
+            shutil.copyfile(os.path.join(self.rootSource, header_file), dst)
+

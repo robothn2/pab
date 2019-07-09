@@ -12,11 +12,15 @@ class Request:
         self.hostOS = OS()
         self.targetOS = OS(os_detect(kwargs['target_os']))
         self.target_os = self.targetOS.name
-        self.arch = arch_detect(kwargs['target_cpu']).arch
+        arch = arch_detect(kwargs['target_cpu'])
+        self.arch = arch[0]
+        self.target_cpu = arch[1]
+        self.target_triple = self.target_cpu + '-' + self.target_os
         self.stl = kwargs.get('stl', 'gnu-libstdc++')
         self.rootBuild = os.path.realpath(kwargs['root_build'])
         if not os.path.exists(self.rootBuild):
             os.makedirs(self.rootBuild)
+        print('Request:', self.target_os, self.target_cpu, self.target_triple)
 
     def hasMember(self, memberName):
         return memberName in self.cfg

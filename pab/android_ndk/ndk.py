@@ -16,12 +16,14 @@ class NDKStl:
         stl = os.path.basename(root)
         if stl == 'llvm-libc++':
             self.include_dirs.append(os.path.join(root, 'include'))
+            self.include_dirs.append(os.path.join(root, 'include/ext'))
             libpath = os.path.join(root, 'libs', kwargs['arch'])
             self.lib_dirs.append(libpath)
             self.static_libs.append('c++_static')
             self.shared_libs.append(os.path.join(libpath, 'libc++_shared.so'))
         elif stl == 'gnu-libstdc++':
             self.include_dirs.append(os.path.join(root, '4.9/include'))
+            self.include_dirs.append(os.path.join(root, '4.9/include/ext'))
             libpath = os.path.join(root, '4.9/libs', kwargs['arch'])
             self.include_dirs.append(os.path.join(libpath, 'include'))  # bits
             self.lib_dirs.append(libpath)
@@ -77,8 +79,6 @@ class NDK:
         if not os.path.exists(self.sysroot):
             return (False, 'Ndk sysroot not exist: %s' % self.sysroot)
 
-        # $NDK/platforms/android-21/arch-x86/usr/lib/libc.so
-        # $NDK/sources/cxx-stl/llvm-libc++/libs/x86/libc++_shared.so
         self.rootStl = NDKStl(
                 os.path.join(self.root, 'sources/cxx-stl', request.stl),
                 arch=self.getCppLibSubfolder(request))
@@ -97,7 +97,7 @@ class NDK:
                         self.getSysrootIncludeSubfolder(kwargs['request']))),
                 ],
                 'cxx': [
-                    ('define', ['__ANDROID__', 'ANDROID']),
+                    ('define', ['__ANDROID__', 'ANDROID', '__ELF__']),
                     ('sysroot', self.sysroot),
                     ('sysroot', os.path.join(self.root, 'sysroot')),
                     ('includePath', lambda kwargs: os.path.join(
@@ -108,7 +108,6 @@ class NDK:
                 ],
                 'link': [
                     ('sysroot', self.sysroot),
-                    self._filterLinkToLib,
                 ],
                 }
 
@@ -119,6 +118,7 @@ class NDK:
 
         clang = Clang(prefix=os.path.join(self.root, 'toolchains/llvm/prebuilt/windows-x86_64/bin'),
                     suffix=request.hostOS.getExecutableSuffix())
+        self.cmdFilters['cxx'].append(('define', '_LIBCPP_HAS_THREAD_API_PTHREAD'))
         return True, [clang]
 
     def queryCmd(self, cmd_name):
@@ -135,26 +135,6 @@ class NDK:
             if os.path.exists(p):
                 return p
         return None
-
-    def _filterLinkToLib(self, args):
-        if args['cmd'] != 'link':
-            return
-
-        ret = []
-        crtStatic = args.get('crtStatic', False)
-        if args['target'].std.startswith('c++'):
-            if crtStatic:
-                ret.append(('lib', self.rootStl.static_libs))
-            else:
-                ret.extend(self.rootStl.shared_libs)
-        else:
-            if crtStatic:
-                ret.append(('lib', 'c'))
-            else:
-                sopath = self._search_file('libc.so', self.libPaths)
-                assert(sopath)
-                ret.append(sopath)
-        return ret
 
     def getToolchainName(self, request):
         arch = request.arch

@@ -3,7 +3,7 @@ import re
 
 
 def output_analyze(cmdline, output):
-    result = re.search(r'^(\S+:\d+:\d+): error: (.*)$',
+    result = re.search(r'^(\S+:\d+:\d+): (?:fatal )?error: (.*)$',
                        output, re.RegexFlag.MULTILINE)
     if result:
         return result.groups()

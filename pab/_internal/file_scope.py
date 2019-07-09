@@ -41,7 +41,7 @@ class FileContext(dict):
 
         variables = ['defines', 'public_include_dirs', 'include_dirs',
                      'sources', 'ccflags', 'cxxflags', 'ldflags',
-                     'lib_dirs', 'libs', 'deps',
+                     'lib_dirs', 'libs', 'deps', 'public_headers',
                      ]
         for v in variables:
             self[v] = ItemList()

@@ -48,10 +48,12 @@ class Clang:
         self.cmdFilters = {
                 'cc': [
                     ['-Wall'],
+                    lambda args: '--target=' + args['request'].target_triple,
                     self._filterSrcListAndDst,
                 ],
                 'cxx': [
                     ['-Wall'],
+                    lambda args: '--target=' + args['request'].target_triple,
                     self._filterSrcListAndDst,
                 ],
                 'ar': [
@@ -59,7 +61,7 @@ class Clang:
                 ],
                 'link': [
                     # todo: clang compile object using msys64's gcc
-                    lambda args: '--target=' + args['request'].arch,
+                    lambda args: '--target=' + args['request'].target_triple,
                     self._filterSrcListAndDst,
                 ],
                 }
@@ -88,17 +90,11 @@ class Clang:
         if 'dst' in args:
             dst = args['dst']
             if cmd == 'ar':
-                dst += request.targetOS.getExecutableSuffix('staticLib')
                 ret.append(dst)
             else:
-                if cmd == 'link':
-                    target = args['target']
-                    dst += target.getSuffix(request)
-                    ret += ['-o', dst]
-                    if target.isSharedLib():
-                        ret += ['-shared', '-fpic']
-                else:
-                    ret += ['-o', dst]
+                ret += ['-o', dst]
+                if cmd == 'link' and args['target'].isSharedLib():
+                    ret += ['-shared', '-fpic']
             args['dst'] = dst
 
         if 'src' in args:

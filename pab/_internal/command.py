@@ -66,8 +66,8 @@ class Command:
         #   double quote `"`
         cmdline = subprocess.list2cmdline(self.cmds) \
             + ' ' + ' '.join(self.appendixs)
-        if verbose:
-            print('-', cmdline)
+        # if verbose:
+        print('-', cmdline)
         exitcode, output = subprocess.getstatusoutput(cmdline)
         if exitcode != 0:
             error = output_analyze(cmdline, output)

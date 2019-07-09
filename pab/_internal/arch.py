@@ -19,7 +19,7 @@ _ostag_filters = [
     ['linux', ],
     ['android', ],
     ['win', 'win32', 'windows', 'winnt'],
-    ['mac', 'macos', 'macosx', '.m', '.mm'],
+    ['mac', 'macos', 'macosx', 'darwin', '.m', '.mm'],
     ['ios', 'iphone', 'iphoneos', 'iphonesimulator'],
 ]
 _os_map = {tag: osname[0]
@@ -27,7 +27,7 @@ _os_map = {tag: osname[0]
            for tag in osname}  # map file tag to OS name
 
 _archtag_filters = [
-    ['arm64', 'aarch64', 'arm64'],
+    ['arm64', 'aarch64'],
     ['arm', 'armv5te', 'armv7a', 'armeabi', 'armeabi-v7a'],
     ['x86', 'x64', 'i386', 'i686'],
     ['mips', 'mipsel', 'mipseb'],
@@ -87,9 +87,22 @@ class ArchDetect:
                 return (True, None)
         return (False, 'OS(%s), CPU(%s) not match' % (self.target_os, self.target_cpu))
 
-
-def arch_detect(filepath):
+def file_detect(filepath):
     return ArchDetect(filepath)
+
+def arch_detect(arch_cpu):
+    arch_cpu = arch_cpu.replace('-', '')
+    if arch_cpu.startswith('arm'):
+        if arch_cpu in ['arm64', 'aarch64']:
+            return ('arm64', 'arm64')
+        elif arch_cpu.startswith('armv'):
+            return ('arm', arch_cpu)
+    elif arch_cpu.startswith('x'):
+        if arch_cpu in ['x86_64', 'x64']:
+            return ('x86_64', 'x86_64')
+        if arch_cpu in ['x86', 'x86_32']:
+            return ('x86', 'x86')
+    return None
 
 def os_detect(osname):
     return ArchDetect(osname).target_os

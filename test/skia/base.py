@@ -3,6 +3,8 @@
 lib = {
     'uri': 'base',
     'source_base_dir': 'd:/lib/chromium/base',
+    'type': 'sharedLib',
+    'std': 'c++11',
     'public_include_dirs': [
     ],
     'include_dirs': [
@@ -11,7 +13,6 @@ lib = {
     'defines': [
         'BASE_IMPLEMENTATION',
     ],
-    'std': 'c++11',
     'ccflags': [
     ],
     'cxxflags': [
@@ -541,8 +542,7 @@ lib = {
 
 
 def lib_dyn(lib, context):
-    target_os = context.getVar('target_os')
-    # target_cpu = context.getVar('target_cpu')
+    target_os = context.target_os
     if not context.getOption('use_glib'):
         lib.sources -= [
             'nix',

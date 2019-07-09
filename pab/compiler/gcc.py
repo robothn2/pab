@@ -67,18 +67,13 @@ class GCC:
         '''
         if 'dst' in args:
             dst = args['dst']
+            dst = args['dst']
             if cmd == 'ar':
-                dst += request.targetOS.getExecutableSuffix('staticLib')
                 ret.append(dst)
             else:
-                if cmd == 'link':
-                    target = args['target']
-                    dst += target.getSuffix(request)
-                    ret += ['-o', dst]
-                    if target.isSharedLib():
-                        ret += ['-shared', '-fpic']
-                else:
-                    ret += ['-o', dst]
+                ret += ['-o', dst]
+                if cmd == 'link' and args['target'].isSharedLib():
+                    ret += ['-shared', '-fpic']
             args['dst'] = dst
 
         if 'src' in args:
