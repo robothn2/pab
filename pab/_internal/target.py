@@ -6,8 +6,9 @@ import shutil
 from pab._internal.arch import file_detect
 from pab._internal.file_scope import FileContext
 
+
 class Target:
-    def __init__(self, tar, rootSource, request):
+    def __init__(self, tar, request):
         self.dyn_setting = tar[1]
         self.request = request
         self.setting = FileContext(**tar[0], **request.kwargs)
@@ -15,9 +16,7 @@ class Target:
         self.type = self.setting.get('type', 'staticLib')
         self.name = re.split(r'[./\\]', self.uri)[-1]
         self.std = self.setting.get('std', 'c++11')  # c99, c11, c++11, c++17
-        self.rootSource = rootSource
-        if not self.rootSource:
-            self.rootSource = tar[0].get('source_base_dir')
+        self.rootSource = tar[0].get('source_base_dir')
         print('Target:', self.name,
               'type:', self.type,
               'source:', self.rootSource)
@@ -25,7 +24,7 @@ class Target:
         include_dirs = self.setting.get('include_dirs', [])
         exist_dirs = []
         for path in include_dirs:
-            path = os.path.realpath(os.path.join(rootSource, path))
+            path = os.path.realpath(os.path.join(self.rootSource, path))
             if not os.path.exists(path):
                 continue
             exist_dirs.append(path)
@@ -73,7 +72,9 @@ class Target:
 
     def build(self, builder, targetsArgs):
         print('== Target:', self.uri)
+        print(self.setting.sources)
         self.apply()
+        print(self.setting.sources)
 
         objs = []
         created_dst_folders = []
@@ -116,8 +117,9 @@ class Target:
         if len(objs) == 0:
             return
 
-        executable = os.path.join(self.request.rootBuild, 'lib',
-                                  self.request.targetOS.getFullName(self.name))
+        executable = os.path.join(
+                self.request.rootBuild, 'lib',
+                self.request.targetOS.getFullName(self.name, self.type))
         dstfolder = os.path.dirname(executable)
         if not os.path.exists(dstfolder):
             os.makedirs(dstfolder)
@@ -135,18 +137,24 @@ class Target:
         result = builder.execCommand('file', src=executable)
         print(result[1])
 
-        # copy public headers to $BUILD/include
-        rootHeaders = os.path.join(self.request.rootBuild,
-                                   'include', self.setting.install_header_dir)
+        # copy public headers to $BUILD
         for header_file in self.setting.public_headers:
-            dst_file = header_file
-            if dst_file.startswith('include/'):
-                dst_file = dst_file[8:]
-            if dst_file.startswith(self.setting.install_header_dir):
-                dst_file = dst_file[len(self.setting.install_header_dir)+1:]
-            dst = os.path.join(rootHeaders, dst_file)
+            walk_path = header_file
+            mapped_path = None
+            while not mapped_path and walk_path:
+                walk_path = os.path.dirname(walk_path)
+                mapped_path = self.setting.install_dirs_map.get(walk_path)
+
+            dst = os.path.join(self.request.rootBuild,
+                               mapped_path if mapped_path else header_file)
+            if walk_path:
+                dst = os.path.join(dst, header_file[len(walk_path)+1:])
+            else:
+                dst = os.path.join(dst, header_file)
+            dst = os.path.realpath(dst)
             dstfolder = os.path.dirname(dst)
             if not os.path.exists(dstfolder):
                 os.makedirs(dstfolder)
-            shutil.copyfile(os.path.join(self.rootSource, header_file), dst)
-
+            src = os.path.realpath(os.path.join(self.rootSource, header_file))
+            print('- install header', src, '->', dst)
+            shutil.copyfile(src, dst)

@@ -1,22 +1,22 @@
 # coding: utf-8
 
-lib_zziplib = {
-    'uri': 'zziplib',
-    'source_base_dir': 'd:/lib/ogredeps/src/zziplib/zzip',
+lib_ogremain = {
+    'uri': 'OgreMain',
+    'source_base_dir': 'd:/lib/ogre/OgreMain/src',
     'type': 'staticLib',
     'std': 'c11',
     'public_include_dirs': [],
     'include_dirs': [
         '..',
         '../../src/zlib',
-        ],
+    ],
     'defines': [],
     'ccflags': [],
     'cxxflags': [],
     'deps': [],
     'libs': ['c', 'z'],
-    'install_dirs_map': {
-        '': 'include/zzip',
+    'install_header_map': {
+        '': 'zzip',
         },
     'public_headers': [
         'conf.h',
@@ -42,7 +42,6 @@ lib_zziplib = {
         ],
 }
 
-
 def dyn_zziplib(lib, context):
     target_os = context.target_os
     if context.getOption('build_shared_libs'):
@@ -51,6 +50,8 @@ def dyn_zziplib(lib, context):
             lib.libs += ['zlib']
 
     if target_os == 'ios':
+        #set_target_properties(zziplib PROPERTIES XCODE_ATTRIBUTE_ONLY_ACTIVE_ARCH "NO")
+        #set_target_properties(zziplib PROPERTIES XCODE_ATTRIBUTE_GCC_THUMB_SUPPORT "NO")
         pass
 
 
@@ -70,9 +71,6 @@ lib_freetype = {
     'deps': [],
     'libs': ['c', 'z'],
     'public_include_dirs': [],
-    'install_dirs_map': {
-        'include': 'include',
-        },
     'install_header_dir': 'freetype',
     'public_headers': [
         'include/ft2build.h',
@@ -162,10 +160,11 @@ lib_freetype = {
     ],
 }
 
-
 def dyn_freetype(lib, context):
     target_os = context.target_os
     if target_os == 'ios':
+        #set_target_properties(zziplib PROPERTIES XCODE_ATTRIBUTE_ONLY_ACTIVE_ARCH "NO")
+        #set_target_properties(zziplib PROPERTIES XCODE_ATTRIBUTE_GCC_THUMB_SUPPORT "NO")
         lib.defines += [
             'HAVE_QUICKDRAW_CARBON=0',
             'HAVE_QUICKDRAW_TOOLBOX=0',
@@ -175,7 +174,6 @@ def dyn_freetype(lib, context):
             'DARWIN_NO_CARBON=1',
             'FT_CONFIG_OPTION_NO_ASSEMBLER=1',
         ]
-
 
 export_libs = [
     (lib_zziplib, dyn_zziplib),

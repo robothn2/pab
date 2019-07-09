@@ -47,13 +47,15 @@ class FileContext(dict):
             self[v] = ItemList()
 
         for k, v in kwargs.items():
-            if isinstance(v, str):
+            if isinstance(v, (str, dict)):
                 self[k] = v
             elif isinstance(v, (list, tuple)):
                 if k in self:
                     self[k] += v
                 else:
                     self[k] = ItemList(v)
+            else:
+                print('* ignore key-value', k, v)
 
         self.group_vars = list(args)
 
