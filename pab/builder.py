@@ -52,7 +52,7 @@ class Builder:
         self.results.reset(title=str(target))
         self.configs.append(target)
 
-        target.build(self.request, self.configs, self, kwargs)
+        target.build(self.request, self.configs, self, **kwargs)
 
         self.configs.remove(target)
         self.results.dump()
@@ -60,6 +60,7 @@ class Builder:
     def execCommand(self, cmd_name, **kwargs):
         if not cmd_name:
             return (False, None)
+
         cmd_entry = self._find_cmd_entry(cmd_name)
         assert(isinstance(cmd_entry, tuple))
         cmd = Command(name=cmd_name, executable=cmd_entry[0],
@@ -75,6 +76,9 @@ class Builder:
             print('=', cmd_name, dst)
         else:
             print('=', cmd_name, src)
+        if kwargs.get('dryrun', False):
+            print('-', cmd.getCmdLine())
+            return True, 'dryrun ok'
         return cmd.execute(kwargs.get('verbose', False))
 
     def _find_cmd_entry(self, cmd_name):

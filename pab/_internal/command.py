@@ -61,13 +61,14 @@ class Command:
 
         return kwargs.get('dst', None)
 
+    def getCmdLine(self):
+        return subprocess.list2cmdline(self.cmds) \
+            + ' ' + ' '.join(self.appendixs)
+
     def execute(self, verbose=False):
         # using appendixs to avoid incorrect quote on cmd part which existing
         #   double quote `"`
-        cmdline = subprocess.list2cmdline(self.cmds) \
-            + ' ' + ' '.join(self.appendixs)
-        # if verbose:
-        print('-', cmdline)
+        cmdline = self.getCmdLine()
         exitcode, output = subprocess.getstatusoutput(cmdline)
         if exitcode != 0:
             error = output_analyze(cmdline, output)

@@ -70,11 +70,9 @@ class Target:
     def apply(self, **kwargs):
         self.dyn_setting(self.setting, self.setting)
 
-    def build(self, builder, targetsArgs):
-        print('== Target:', self.uri)
-        print(self.setting.sources)
+    def build(self, builder, **kwargs):
+        print('== Target:', self.uri, ', args:', kwargs)
         self.apply()
-        print(self.setting.sources)
 
         objs = []
         created_dst_folders = []
@@ -104,7 +102,7 @@ class Target:
             result = builder.execCommand(
                         detected.cmd, request=self.request,
                         src=src, dst=dst, target=self,
-                        **targetsArgs)
+                        **kwargs)
             if result[0]:
                 builder.results.succeeded(file)
                 objs.append(dst)
@@ -128,7 +126,7 @@ class Target:
             'ar' if self.isStaticLib() else 'link',
             request=self.request, src=objs,
             dst=executable,
-            target=self, **targetsArgs)
+            target=self, **kwargs)
         if not result[0]:
             builder.results.error(file, result[1])
             return

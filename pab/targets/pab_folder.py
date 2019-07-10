@@ -42,7 +42,7 @@ class PabTargets:
     def _sort_targets(self):
         self.targetsSorted = list(self.targets.values())
 
-    def build(self, request, configs, builder, kwargs):
+    def build(self, request, configs, builder, **kwargs):
         self._sort_targets()
 
         print('=== Build', str(self))
@@ -50,5 +50,5 @@ class PabTargets:
             target = Target(t, request)
 
             configs.append(target)
-            target.build(builder, self.kwargs)
+            target.build(builder, **self.kwargs, **kwargs)
             configs.remove(target)
