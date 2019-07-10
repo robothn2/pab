@@ -94,9 +94,9 @@ class FileContext(dict):
         dict.__init__({})
         self['options'] = {}
         vars_normal = ['defines', 'public_include_dirs', 'include_dirs',
-                     'headers', 'ccflags', 'cxxflags', 'ldflags',
-                     'lib_dirs', 'libs', 'deps',
-                     ]
+                       'headers', 'ccflags', 'cxxflags', 'ldflags',
+                       'lib_dirs', 'libs', 'deps',
+                       ]
         vars_regex = ['public_headers', 'sources']  # support regex add / sub
         for v in vars_normal:
             self[v] = ItemList(name=v)
@@ -130,6 +130,14 @@ class FileContext(dict):
     def getOption(self, name):
         return self['options'].get(name, False)
 
+    def parseFile(self, filepath, pattern):
+        with open(filepath, 'r', encoding='utf-8') as f:
+            lines = f.read()
+            result = re.findall(pattern, lines,
+                                re.RegexFlag.MULTILINE + re.RegexFlag.ASCII)
+            if result:
+                return {entry[0]: entry[1].strip('"') for entry in result}
+
 
 def parse_build_file(filepath):
     global_scope = {}
@@ -144,9 +152,8 @@ def parse_build_file(filepath):
 
 
 if __name__ == '__main__':
-    _str_find_first_of('src/include/*.h', '[*?')
-
-    sources = ItemList('c1.c', 'c2.c', 'c3.c', name='test', base=r'D:\lib\base')
+    sources = ItemList('c1.c', 'c2.c', 'c3.c',
+                       name='test', base=r'D:\lib\base')
     print(sources)
 
     # basic test
@@ -176,3 +183,9 @@ if __name__ == '__main__':
     # regex -=
     sources -= [r'^files/file_path.*\.cc', 'files/file_path_watcher.h']
     print(sources)
+
+    context = FileContext(source_base_dir='d:/lib/ogre')
+    versions = context.parseFile(
+            'd:/lib/ogre/OgreMain/include/OgrePrerequisites.h',
+            r'^\s*#define\s+(OGRE_VERSION_\S+)\s+(.+)$')
+    print(versions)
