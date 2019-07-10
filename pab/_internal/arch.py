@@ -27,11 +27,11 @@ _os_map = {tag: osname[0]
            for tag in osname}  # map file tag to OS name
 
 _os_tags = {
-    'win': ('win', 'windows', 'win32', 'winnt', 'pc'),
-    'mac': ('mac', 'apple', 'macos', 'macosx', 'darwin', 'posix'),
-    'ios': ('ios', 'apple', 'iphone', 'ipad'),
-    'linux': ('linux', 'posix', ),
-    'android': ('android', 'linux', 'posix', ),
+    'win': ['win', 'windows', 'win32', 'winnt', 'pc'],
+    'mac': ['mac', 'apple', 'macos', 'macosx', 'darwin', 'posix'],
+    'ios': ['ios', 'apple', 'iphone', 'ipad'],
+    'linux': ['linux', 'posix', ],
+    'android': ['android', 'linux', 'posix', ],
 }
 
 _archtag_filters = [
@@ -116,7 +116,7 @@ def os_detect(osname):
     return ArchDetect(osname).target_os
 
 def os_get_tags(osname):
-    return _os_tags.get(osname, ())
+    return _os_tags.get(osname, [])
 
 if __name__ == '__main__':
     d = arch_detect('files/file_path_watcher_win.cc')

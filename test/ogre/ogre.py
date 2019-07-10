@@ -69,7 +69,6 @@ set_target_properties(OgreMain PROPERTIES VERSION ${OGRE_SOVERSION} SOVERSION ${
 
 def dyn_OgreMain(lib, context):
     target_os = context.target_os_tags
-    print('os tags:', target_os)
     if context.getOption('build_shared_libs'):
         if target_os == 'win':
             lib.defines += ['ZZIP_DLL']
@@ -77,12 +76,12 @@ def dyn_OgreMain(lib, context):
 
     # Remove optional header files
     lib.sources -= [
-        'src/OgreFileSystemLayerNoOp.cpp'
-        'src/OgreDDSCodec.cpp'
-        'src/OgrePVRTCCodec.cpp'
-        'src/OgreETCCodec.cpp'
-        'src/OgreZip.cpp'
-        'src/OgreSearchOps.cpp'
+        'src/OgreFileSystemLayerNoOp.cpp',
+        'src/OgreDDSCodec.cpp',
+        'src/OgrePVRTCCodec.cpp',
+        'src/OgreETCCodec.cpp',
+        'src/OgreZip.cpp',
+        'src/OgreSearchOps.cpp',
         ]
     lib.headers -= [
         'include/OgreDDSCodec.h',
@@ -167,6 +166,6 @@ def dyn_OgreMain(lib, context):
 
 
 export_libs = [
-    (install_root, None),
     (lib_OgreMain, dyn_OgreMain),
+    (install_root, None),
 ]
