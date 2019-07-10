@@ -15,7 +15,7 @@ _ext_map = {ext: cmd
             for cmd in _ext_filters.keys()
             for ext in _ext_filters[cmd]}  # map file extension to Command name
 
-_ostag_filters = [
+_filetag_filters = [
     ['linux', ],
     ['android', ],
     ['win', 'win32', 'windows', 'winnt'],
@@ -23,8 +23,16 @@ _ostag_filters = [
     ['ios', 'iphone', 'iphoneos', 'iphonesimulator'],
 ]
 _os_map = {tag: osname[0]
-           for osname in _ostag_filters
+           for osname in _filetag_filters
            for tag in osname}  # map file tag to OS name
+
+_os_tags = {
+    'win': ('win', 'windows', 'win32', 'winnt', 'pc'),
+    'mac': ('mac', 'apple', 'macos', 'macosx', 'darwin', 'posix'),
+    'ios': ('ios', 'apple', 'iphone', 'ipad'),
+    'linux': ('linux', 'posix', ),
+    'android': ('android', 'linux', 'posix', ),
+}
 
 _archtag_filters = [
     ['arm64', 'aarch64'],
@@ -107,6 +115,8 @@ def arch_detect(arch_cpu):
 def os_detect(osname):
     return ArchDetect(osname).target_os
 
+def os_get_tags(osname):
+    return _os_tags.get(osname, ())
 
 if __name__ == '__main__':
     d = arch_detect('files/file_path_watcher_win.cc')

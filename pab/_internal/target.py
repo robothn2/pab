@@ -3,7 +3,7 @@
 import os
 import re
 import shutil
-from pab._internal.arch import file_detect
+from pab._internal.arch import file_detect, os_get_tags
 from pab._internal.file_scope import FileContext
 
 
@@ -68,7 +68,8 @@ class Target:
         return self.cmdFilters.get(cmd_name, [])
 
     def apply(self, **kwargs):
-        self.dyn_setting(self.setting, self.setting)
+        if self.dyn_setting:
+            self.dyn_setting(self.setting, self.setting)
 
     def build(self, builder, **kwargs):
         print('== Target:', self.uri, ', args:', kwargs)

@@ -18,6 +18,13 @@ lib_OgreMain = {
     'source_base_dir': 'd:/lib/ogre/OgreMain',
     'type': 'staticLib',
     'std': 'c++11',
+    'options': {
+        'OGRE_CONFIG_ENABLE_DDS': True,
+        'OGRE_CONFIG_ENABLE_PVRTC': True,
+        'OGRE_CONFIG_ENABLE_ETC': True,
+        'OGRE_CONFIG_ENABLE_ASTC': True,
+        'OGRE_CONFIG_ENABLE_ZIP': True,
+    },
     'public_include_dirs': [],
     'include_dirs': [
         'include',
@@ -62,6 +69,7 @@ set_target_properties(OgreMain PROPERTIES VERSION ${OGRE_SOVERSION} SOVERSION ${
 
 def dyn_OgreMain(lib, context):
     target_os = context.target_os_tags
+    print('os tags:', target_os)
     if context.getOption('build_shared_libs'):
         if target_os == 'win':
             lib.defines += ['ZZIP_DLL']

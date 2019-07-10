@@ -38,9 +38,9 @@ class ItemList(list):
 class FileContext(dict):
     def __init__(self, *args, **kwargs):
         dict.__init__({})
-
+        self['options'] = {}
         variables = ['defines', 'public_include_dirs', 'include_dirs',
-                     'sources', 'ccflags', 'cxxflags', 'ldflags',
+                     'headers', 'sources', 'ccflags', 'cxxflags', 'ldflags',
                      'lib_dirs', 'libs', 'deps', 'public_headers',
                      ]
         for v in variables:
@@ -71,7 +71,7 @@ class FileContext(dict):
         return None
 
     def getOption(self, name):
-        return False
+        return self['options'].get(name, False)
 
 
 def parse_build_file(filepath):
@@ -101,3 +101,5 @@ if __name__ == '__main__':
     print(sources)
     sources -= 'c5.c'
     print(sources)
+    sources -= ''
+    sources -= None

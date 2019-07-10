@@ -14,6 +14,6 @@ if __name__ == '__main__':
                       stl='llvm-libc++',  # 'gnu-libstdc++', 'llvm-libc++'
                       root_build='D:/lib/build')
 
-    target = PabTargets(root='test/ogre/ogredeps.py')
+    target = PabTargets(root='test/ogre/ogre.py')
     builder = Builder(request, compiler)
     builder.build(target, dryrun=True, verbose=False)
