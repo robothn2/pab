@@ -1,181 +1,164 @@
 # coding: utf-8
 
-lib_ogremain = {
+install_root = {
+    'uri': 'install',
+    'source_base_dir': 'd:/lib/ogre',
+    'type': 'config',
+    'install_dirs_map': {
+        '': 'include/OGRE',
+        },
+    'public_headers': [
+        'include/OgreBuildSettings.h',
+        'include/OgreExports.h',
+        ],
+}
+
+lib_OgreMain = {
     'uri': 'OgreMain',
-    'source_base_dir': 'd:/lib/ogre/OgreMain/src',
+    'source_base_dir': 'd:/lib/ogre/OgreMain',
     'type': 'staticLib',
-    'std': 'c11',
+    'std': 'c++11',
     'public_include_dirs': [],
     'include_dirs': [
-        '..',
-        '../../src/zlib',
+        'include',
+        'include/Threading',
+        'src',
     ],
     'defines': [],
     'ccflags': [],
     'cxxflags': [],
-    'deps': [],
-    'libs': ['c', 'z'],
-    'install_header_map': {
-        '': 'zzip',
+    'libs': [],
+    'install_dirs_map': {
+        'include': 'include/OGRE',
         },
     'public_headers': [
-        'conf.h',
-        '_config.h',
-        'types.h',
-        'zzip.h',
-        'plugin.h',
-        '_msvc.h',
+        'include/*.h',
+        'include/Threading/OgreThreadDefinesNone.h',
+        'include/Threading/OgreDefaultWorkQueueStandard.h',
         ],
     'sources': [
-        'dir.c',
-        'err.c',
-        'fetch.c',
-        'file.c',
-        'fseeko.c',
-        'info.c',
-        'memdisk.c',
-        'mmapped.c',
-        'plugin.c',
-        'stat.c',
-        'write.c',
-        'zip.c',
+        'src/*.cpp',
+        'src/Threading/OgreDefaultWorkQueueStandard.cpp',
         ],
 }
 
-def dyn_zziplib(lib, context):
-    target_os = context.target_os
+
+'''
+get_native_precompiled_header(OgreMain)
+add_native_precompiled_header(OgreMain 'src/OgreStableHeaders.h')
+
+generate_export_header(OgreMain
+    EXPORT_MACRO_NAME _OgreExport
+    NO_EXPORT_MACRO_NAME _OgrePrivate
+    DEPRECATED_MACRO_NAME OGRE_DEPRECATED
+    EXPORT_FILE_NAME ${CMAKE_BINARY_DIR}/include/OgreExports.h)
+target_include_directories(OgreMain PUBLIC
+  '$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>'
+  '$<BUILD_INTERFACE:${OGRE_BINARY_DIR}/include>'
+  $<INSTALL_INTERFACE:include/OGRE>)
+
+set_target_properties(OgreMain PROPERTIES VERSION ${OGRE_SOVERSION} SOVERSION ${OGRE_SOVERSION})
+'''
+
+def dyn_OgreMain(lib, context):
+    target_os = context.target_os_tags
     if context.getOption('build_shared_libs'):
         if target_os == 'win':
             lib.defines += ['ZZIP_DLL']
             lib.libs += ['zlib']
 
-    if target_os == 'ios':
-        #set_target_properties(zziplib PROPERTIES XCODE_ATTRIBUTE_ONLY_ACTIVE_ARCH "NO")
-        #set_target_properties(zziplib PROPERTIES XCODE_ATTRIBUTE_GCC_THUMB_SUPPORT "NO")
-        pass
-
-
-lib_freetype = {
-    'uri': 'freetype',
-    'source_base_dir': 'd:/lib/ogredeps/src/freetype',
-    'type': 'staticLib',
-    'std': 'c11',
-    'include_dirs': [
-        '.',
-    ],
-    'defines': [
-        'FT2_BUILD_LIBRARY',
-    ],
-    'ccflags': [],
-    'cxxflags': [],
-    'deps': [],
-    'libs': ['c', 'z'],
-    'public_include_dirs': [],
-    'install_header_dir': 'freetype',
-    'public_headers': [
-        'include/ft2build.h',
-        'include/freetype/config/ftconfig.h',
-        'include/freetype/config/ftheader.h',
-        'include/freetype/config/ftmodule.h',
-        'include/freetype/config/ftoption.h',
-        'include/freetype/config/ftstdlib.h',
-        'include/freetype/freetype.h',
-        'include/freetype/ftadvanc.h',
-        'include/freetype/ftbbox.h',
-        'include/freetype/ftbdf.h',
-        'include/freetype/ftbitmap.h',
-        'include/freetype/ftbzip2.h',
-        'include/freetype/ftcache.h',
-        'include/freetype/ftchapters.h',
-        'include/freetype/ftcid.h',
-        'include/freetype/fterrdef.h',
-        'include/freetype/fterrors.h',
-        'include/freetype/ftgasp.h',
-        'include/freetype/ftglyph.h',
-        'include/freetype/ftgxval.h',
-        'include/freetype/ftgzip.h',
-        'include/freetype/ftimage.h',
-        'include/freetype/ftincrem.h',
-        'include/freetype/ftlcdfil.h',
-        'include/freetype/ftlist.h',
-        'include/freetype/ftlzw.h',
-        'include/freetype/ftmac.h',
-        'include/freetype/ftmm.h',
-        'include/freetype/ftmodapi.h',
-        'include/freetype/ftmoderr.h',
-        'include/freetype/ftotval.h',
-        'include/freetype/ftoutln.h',
-        'include/freetype/ftpfr.h',
-        'include/freetype/ftrender.h',
-        'include/freetype/ftsizes.h',
-        'include/freetype/ftsnames.h',
-        'include/freetype/ftstroke.h',
-        'include/freetype/ftsynth.h',
-        'include/freetype/ftsystem.h',
-        'include/freetype/fttrigon.h',
-        'include/freetype/fttypes.h',
-        'include/freetype/ftwinfnt.h',
-        'include/freetype/ftxf86.h',
-        'include/freetype/t1tables.h',
-        'include/freetype/ttnameid.h',
-        'include/freetype/tttables.h',
-        'include/freetype/tttags.h',
-        'include/freetype/ttunpat.h',
-    ],
-    'sources': [
-        'src/autofit/autofit.c',
-        'src/base/ftbase.c',
-        'src/base/ftbbox.c',
-        'src/base/ftbitmap.c',
-        'src/base/ftfstype.c',
-        'src/base/ftgasp.c',
-        'src/base/ftglyph.c',
-        'src/base/ftinit.c',
-        'src/base/ftmm.c',
-        'src/base/ftpfr.c',
-        'src/base/ftstroke.c',
-        'src/base/ftsynth.c',
-        'src/base/ftsystem.c',
-        'src/base/fttype1.c',
-        'src/base/ftwinfnt.c',
-        'src/bdf/bdf.c',
-        'src/bzip2/ftbzip2.c',
-        'src/cache/ftcache.c',
-        'src/cff/cff.c',
-        'src/cid/type1cid.c',
-        'src/gzip/ftgzip.c',
-        'src/lzw/ftlzw.c',
-        'src/pcf/pcf.c',
-        'src/pfr/pfr.c',
-        'src/psaux/psaux.c',
-        'src/pshinter/pshinter.c',
-        'src/psnames/psmodule.c',
-        'src/raster/raster.c',
-        'src/sfnt/sfnt.c',
-        'src/smooth/smooth.c',
-        'src/truetype/truetype.c',
-        'src/type1/type1.c',
-        'src/type42/type42.c',
-        'src/winfonts/winfnt.c',
-    ],
-}
-
-def dyn_freetype(lib, context):
-    target_os = context.target_os
-    if target_os == 'ios':
-        #set_target_properties(zziplib PROPERTIES XCODE_ATTRIBUTE_ONLY_ACTIVE_ARCH "NO")
-        #set_target_properties(zziplib PROPERTIES XCODE_ATTRIBUTE_GCC_THUMB_SUPPORT "NO")
-        lib.defines += [
-            'HAVE_QUICKDRAW_CARBON=0',
-            'HAVE_QUICKDRAW_TOOLBOX=0',
-            'HAVE_ATS=0',
-            'HAVE_FSREF=0',
-            'HAVE_FSSPEC=0',
-            'DARWIN_NO_CARBON=1',
-            'FT_CONFIG_OPTION_NO_ASSEMBLER=1',
+    # Remove optional header files
+    lib.sources -= [
+        'src/OgreFileSystemLayerNoOp.cpp'
+        'src/OgreDDSCodec.cpp'
+        'src/OgrePVRTCCodec.cpp'
+        'src/OgreETCCodec.cpp'
+        'src/OgreZip.cpp'
+        'src/OgreSearchOps.cpp'
+        ]
+    lib.headers -= [
+        'include/OgreDDSCodec.h',
+        'include/OgrePVRTCCodec.h',
+        'include/OgreETCCodec.h',
+        'include/OgreZip.h',
         ]
 
+    if context.getOption('OGRE_CONFIG_ENABLE_DDS'):
+        lib.headers += 'include/OgreDDSCodec.h'
+        lib.sources += 'src/OgreDDSCodec.cpp'
+    if context.getOption('OGRE_CONFIG_ENABLE_PVRTC'):
+        lib.headers += 'include/OgrePVRTCCodec.h'
+        lib.sources += 'src/OgrePVRTCCodec.cpp'
+    if context.getOption('OGRE_CONFIG_ENABLE_ETC'):
+        lib.headers += 'include/OgreETCCodec.h'
+        lib.sources += 'src/OgreETCCodec.cpp'
+    if context.getOption('OGRE_CONFIG_ENABLE_ASTC'):
+        lib.headers += 'include/OgreASTCCodec.h'
+        lib.sources += 'src/OgreASTCCodec.cpp'
+    if context.getOption('OGRE_CONFIG_ENABLE_ZIP'):
+        lib.headers += 'include/OgreZip.h'
+        lib.sources += 'src/OgreZip.cpp'
+        if 'android' in target_os:
+            lib.defines += 'ZZIP_OMIT_CONFIG_H'
+        lib.deps += 'zziplib'
+        lib.libs += 'z'
+
+    if 'win' in target_os:
+        lib.files += 'src/WIN32/*.cpp'
+    if 'apple' in target_os:
+        '''
+        if(OGRE_BUILD_LIBS_AS_FRAMEWORKS)
+            set_target_properties(OgreMain PROPERTIES	OUTPUT_NAME Ogre)
+        endif()
+        '''
+        if 'ios' in target_os:
+            lib.include_dirs += 'src/iOS'
+            lib.sources += ['src/iOS/*.cpp', 'src/iOS/*.mm']
+            lib.libs = []
+            # set_target_properties(OgreMain PROPERTIES INSTALL_NAME_DIR 'OGRE')
+        else:
+            lib.include_dirs += 'src/OSX'
+            lib.sources += ['src/OSX/*.cpp', 'src/OSX/*.mm']
+            lib.ldflags += ['-framework', 'IOKit', '-framework', 'Cocoa',
+                            '-framework', 'Carbon', '-framework', 'OpenGL',
+                            '-framework', 'CoreVideo']
+
+            '''
+            set(OGRE_OSX_BUILD_CONFIGURATION '$(PLATFORM_NAME)/$(CONFIGURATION)')
+
+            if(OGRE_BUILD_LIBS_AS_FRAMEWORKS)
+              add_custom_command(TARGET OgreMain POST_BUILD
+                  COMMAND mkdir ARGS -p ${OGRE_BINARY_DIR}/lib/${OGRE_OSX_BUILD_CONFIGURATION}/Ogre.framework/Headers/Threading
+                  COMMAND ditto
+                  ${OGRE_SOURCE_DIR}/OgreMain/include/Threading/*.h ${OGRE_BINARY_DIR}/lib/${OGRE_OSX_BUILD_CONFIGURATION}/Ogre.framework/Headers/Threading
+                  COMMAND cd ${OGRE_BINARY_DIR}/lib/${OGRE_OSX_BUILD_CONFIGURATION}/Ogre.framework/Headers
+                  )
+
+              foreach(HEADER_PATH ${THREAD_HEADER_FILES})
+                  get_filename_component(HEADER_FILE ${HEADER_PATH} NAME)
+                  set(FWK_HEADER_PATH ${OGRE_BINARY_DIR}/lib/${OGRE_OSX_BUILD_CONFIGURATION}/Ogre.framework/Headers/${HEADER_FILE})
+                  add_custom_command(TARGET OgreMain POST_BUILD
+                      COMMAND rm -f ${FWK_HEADER_PATH}
+                      )
+              endforeach()
+            endif()
+
+            ogre_config_framework(OgreMain)
+            '''
+
+    if 'android' in target_os:
+        # required by OgrePlatformInformation.cpp
+        lib.include_dirs += '${ANDROID_NDK}/sources/android/cpufeatures'
+        lib.sources += 'src/Android/*.cpp'
+        lib.libs += ['atomic', 'dl']
+    if 'unix' in target_os:
+        lib.sources += 'src/GLX/*.cpp'
+        lib.libs += 'pthread'
+    if 'win' not in target_os:
+        lib.sources += 'src/OgreSearchOps.cpp'
+
+
 export_libs = [
-    (lib_zziplib, dyn_zziplib),
-    (lib_freetype, dyn_freetype),
+    (install_root, None),
+    (lib_OgreMain, dyn_OgreMain),
 ]

@@ -60,7 +60,7 @@ lib_freetype = {
     'type': 'staticLib',
     'std': 'c11',
     'include_dirs': [
-        '.',
+        'include',
     ],
     'defines': [
         'FT2_BUILD_LIBRARY',
