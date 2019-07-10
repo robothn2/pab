@@ -22,6 +22,7 @@ class Request:
         if not os.path.exists(self.rootBuild):
             os.makedirs(self.rootBuild)
         print('Request:', self.target_os, self.target_cpu, self.target_triple)
+        print('OSTags:', self.kwargs['target_os_tags'])
 
     def hasMember(self, memberName):
         return memberName in self.cfg

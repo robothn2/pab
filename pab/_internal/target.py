@@ -3,7 +3,7 @@
 import os
 import re
 import shutil
-from pab._internal.arch import file_detect, os_get_tags
+from pab._internal.arch import file_detect
 from pab._internal.file_scope import FileContext
 
 
@@ -74,6 +74,7 @@ class Target:
     def build(self, builder, **kwargs):
         print('== Target:', self.uri, ', args:', kwargs)
         self.apply()
+        print('Target context:', self.setting)
 
         objs = []
         created_dst_folders = []

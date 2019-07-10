@@ -1,5 +1,5 @@
 # Description
-pab(python auto build) is a extendable build engine, used to simply build open source projects, likes: ffmpeg, skia
+pab(python auto build) is a extendable build engine, for simply build open source projects: ffmpeg, skia, ogre
 support Host OS：Windows(10), Linux(Ubuntu 18.04), MacOSX(10.13+)
 support Target OS：Windows(7+), Linux(Ubuntu 18.04), MacOSX(10.13+), iOS, Android
 
@@ -9,34 +9,33 @@ from pab.request import Request
 from pab.targets.pab_folder import PabTargets
 from pab.android_ndk.ndk import NDK
 
-compiler = NDK(path='d:/lib/android-ndk-r14b', platform=24, compiler='clang')
-request = Request(target_os='android',
-                  target_cpu='x86_64',
-                  stl='gnu-libstdc++',
+compiler = NDK(path='d:/lib/android-ndk-r14b', platform=9, compiler='gcc')
+request = Request(target_os='android', target_cpu='armv7a',
+                  stl='llvm-libc++',
                   root_build='D:/lib/build')
-
 target = PabTargets(root='test/base', rootSource='D:/lib/chromium/base')
 builder = Builder(request, compiler)
 builder.build(target, top=0, check=False)
 
 # BuildFlow
-* 选择编译器：NDK gcc/llvm, VisualC, IntelC, ...
-* 选择目标：target_os, target_cpu, target_platform(android: api level, win: sdk version)
-* 选择项目：Target 通过 py 文件定义
-* 尝试各种构建系统文件解析生成 Target 树，并将 SourceFiles 分配给各个 Target，支持的构建系统：cmake, configure, gn, subfolder, pab
-* 编译Obj：SourceFile -> Obj
-* 生成Target：Target -> (StaticLib, SharedLib, Executable)
-* 编译Artifact：将公共头文件、库文件、动态库文件、资源文件合并为 SDK, Framework, APP
+* 编译器：NDK gcc/llvm, VisualC, IntelC, LLVM8.0
+* 构建需求：target_os, target_cpu, target_platform(android: api level, win: sdk version)
+* 项目定义：通过定义文件(.py)解析 Targets
+* 编译: Target.sources -> intermediate .o files
+* 生成: .o files -> (StaticLib, SharedLib, Executable)
+* 安装: 将公共头文件、库文件、动态库文件、资源文件合并为 SDK, Framework, APP
 
 # Features
-* 通过 python 文件定义 Targets
+* 通过 python 文件定义 Targets，支持依赖关系
 * 编译生成的临时文件仅存在于指定的目的路径，方便清理和加速
 * 支持一次链接超多 .o 文件
 
 # Todo
-* 统计 Target 链接时少掉哪些引用
-* OS 可能有多个标志，例如：MacOS 还会有 Posix
-* 通过 target 依赖性自动推导构建流程
+* 定义文件: 支持 config 类型 Target，可以复用配置
+* 定义文件: 支持 deps 字段，明确 Targets 之间的依赖关系
+* 定义文件: 支持环境检测: check_header, check_function
+* 定义文件: 支持生成头文件: export_header, gen_header
+* 通过 Target 依赖性自动推导构建流程
 * 使用 clang 编译出 arm 架构的 so
 * 显示变量的来源和变化历史
 * suggestion on fails:
