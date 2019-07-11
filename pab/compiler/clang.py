@@ -79,7 +79,7 @@ class Clang:
     def queryCmd(self, cmd_name):
         return self.cmds.get(cmd_name)
 
-    def filterCmd(self, cmd_name):
+    def filterCmd(self, cmd_name, kwargs):
         return self.cmdFilters.get(cmd_name)
 
     def _filterSrcListAndDst(self, args):

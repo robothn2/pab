@@ -11,7 +11,7 @@ class PabTargets:
     def __init__(self, **kwargs):
         self.kwargs = kwargs
         self.parsedTargets = {}
-        self.appliedTargets = {}
+        self.completedTargets = {}
 
         root = os.path.realpath(kwargs['root'])
         assert(os.path.exists(root))
@@ -32,7 +32,8 @@ class PabTargets:
 
                 self._parse_pyfile(os.path.join(root, file_name))
 
-        print('Parsed targets:', list(self.parsedTargets.keys()))
+        logger.info('Parsed targets: {}'.format(
+                list(self.parsedTargets.keys())))
 
     def _parse_pyfile(self, pyfile):
         parsed_targets = parse_target_file(pyfile)
@@ -93,11 +94,41 @@ class PabTargets:
     def build(self, request, configs, builder, **kwargs):
         sortedTars = self._sort_targets_by_deps(kwargs)
 
-        print('=== Build:', self.name)
+        logger.info('= Build: ' + self.name)
         for tar in sortedTars:
             target = Target(tar, request, root=self.root)
-            self.appliedTargets[target.uri] = target
 
             configs.append(target)
             target.build(builder, **self.kwargs, **kwargs)
             configs.remove(target)
+
+            self.completedTargets[target.uri] = target
+
+    def filterCmd(self, cmd_name, kwargs):
+        # add command parts for target's deps
+        # todo: support configs
+        # todo: support ccflags, cxxflags, ldflags, etc for cc/cxx
+        target = kwargs.get('target')
+        if not target or not target.isArtifact():
+            return
+
+        ret = []
+        if cmd_name == 'cc' or cmd_name == 'cxx':
+            # provide deps.public_include_dirs for cc/cxx
+            for dep_name in target.getDepends():
+                dep = self.completedTargets.get(dep_name)
+                if not dep:
+                    continue
+                ret.append(('includePath', dep.setting.public_include_dirs))
+
+        elif cmd_name == 'link':
+            # provide deps.artifact for link
+            for dep_name in target.getDepends():
+                dep = self.completedTargets.get(dep_name)
+                if not dep or not dep.artifact:
+                    continue
+                if dep.isSharedLib():
+                    ret.append(dep.artifact)
+                elif dep.isStaticLib():
+                    ret.append(('lib', dep.name))
+        return ret

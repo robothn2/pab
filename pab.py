@@ -33,4 +33,4 @@ if __name__ == '__main__':
 
     target = PabTargets(root='test/hello')
     builder = Builder(request, compiler)
-    builder.build(target, dryrun=False, verbose=False)
+    builder.build(target, dryrun=False)

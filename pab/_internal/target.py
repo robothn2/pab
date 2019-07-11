@@ -23,6 +23,7 @@ class Target:
         self.name = re.split(r'[./\\]', self.uri)[-1]
         self.std = self.setting.get('std', 'c++11')  # c99, c11, c++11, c++17
         self.rootSource = base
+        self.artifact = None
 
         include_dirs = self.setting.get('include_dirs', [])
         exist_dirs = []
@@ -61,7 +62,13 @@ class Target:
     def isStaticLib(self):
         return self.type == 'staticLib'
 
-    def filterCmd(self, cmd_name):
+    def isArtifact(self):
+        return self.type in ('staticLib', 'sharedLib', 'executable')
+
+    def getDepends(self):
+        return self.setting.deps
+
+    def filterCmd(self, cmd_name, kwargs):
         return self.cmdFilters.get(cmd_name, [])
 
     def build(self, builder, **kwargs):
@@ -129,8 +136,9 @@ class Target:
             builder.results.error(file, result[1])
             return
 
-        builder.results.succeeded(executable)
-        result = builder.execCommand('file', src=executable)
+        self.artifact = executable
+        builder.results.succeeded(self.artifact)
+        result = builder.execCommand('file', src=self.artifact)
         logger.info(result[1])
 
         # copy public headers to $BUILD

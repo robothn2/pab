@@ -40,7 +40,7 @@ class Command:
         for cfg in filters:
             if not hasattr(cfg, 'filterCmd'):
                 continue
-            resultByCfg = cfg.filterCmd(self.name)
+            resultByCfg = cfg.filterCmd(self.name, kwargs)
             if not resultByCfg:
                 continue
 
@@ -82,7 +82,6 @@ class Command:
             for f in cmd_filter:
                 result = self._recursiveFilter(f, compositors, kwargs)
                 self._combineListAndResult(ret, result)
-            # print('-', cmd_filter, '->', ret)
             return ret
 
         elif callable(cmd_filter):

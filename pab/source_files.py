@@ -14,7 +14,6 @@ class SourceFiles:
         self.rootSrc = os.path.realpath(kwargs['root'])
         self.rootWorkspace = os.path.realpath(kwargs['rootBuild'])
         self.depth = kwargs.get('depth', 0)
-        self.verbose = kwargs.get('verbose', False)
         self.excludeFilesRegex = []
         self.excludeFiles = []
         excludeFiles = kwargs.get('excludeFiles', [])
@@ -60,8 +59,6 @@ class SourceFiles:
     def _search_folder(self, fullpath, depth):
         for file_name in os.listdir(fullpath):
             if self._is_exclude(file_name):
-                if self.verbose:
-                    print('- exclude:', file_name, 'under', fullpath)
                 continue
             src = os.path.join(fullpath, file_name)
             if os.path.islink(src):

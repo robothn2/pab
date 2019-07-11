@@ -12,6 +12,7 @@ lib = {
     ],
     'defines': [
         'BASE_IMPLEMENTATION',
+		'_GLIBCXX_PERMIT_BACKWARD_HASH',
     ],
     'ccflags': [
     ],

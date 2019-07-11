@@ -31,11 +31,8 @@ builder.build(target, top=0, check=False)
 * 支持一次链接超多 .o 文件
 
 # Todo
-* 定义文件: 支持 config 类型 Target，可以复用配置
-* 定义文件: 支持 deps 字段，明确 Targets 之间的依赖关系
 * 定义文件: 支持环境检测: check_header, check_function
 * 定义文件: 支持生成头文件: export_header, gen_header
-* 通过 Target 依赖性自动推导构建流程
 * 使用 clang 编译出 arm 架构的 so
 * 显示变量的来源和变化历史
 * suggestion on fails:
