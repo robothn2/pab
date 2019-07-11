@@ -3,15 +3,15 @@
 import os
 import re
 import shutil
-from pab._internal.arch import file_detect
-from pab._internal.file_scope import FileContext
+from .arch import file_detect
+from .target_context import TargetContext
 
 
 class Target:
-    def __init__(self, tar, request):
+    def __init__(self, tar, request, *deps):
         self.dyn_setting = tar[1]
         self.request = request
-        self.setting = FileContext(**tar[0], **request.kwargs)
+        self.setting = TargetContext(**tar[0], **request.kwargs)
         self.uri = self.setting['uri']
         self.type = self.setting.get('type', 'staticLib')
         self.name = re.split(r'[./\\]', self.uri)[-1]
@@ -74,7 +74,7 @@ class Target:
     def build(self, builder, **kwargs):
         print('== Target:', self.uri, ', args:', kwargs)
         self.apply()
-        print('Target context:', self.setting)
+        # print('Target context:', self.setting)
 
         objs = []
         created_dst_folders = []

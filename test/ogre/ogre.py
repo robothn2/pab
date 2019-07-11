@@ -461,19 +461,6 @@ if (OGRE_INSTALL_SAMPLES OR OGRE_INSTALL_SAMPLES_SOURCE)
 endif ()
 '''
 
-install_root = {
-    'uri': 'install',
-    'source_base_dir': 'd:/lib/ogre',
-    'type': 'config',
-    'install_dirs_map': {
-        '': 'include/OGRE',
-        },
-    'public_headers': [
-        'include/OgreBuildSettings.h',
-        'include/OgreExports.h',
-        ],
-}
-
 lib_OgreMain = {
     'uri': 'OgreMain',
     'source_base_dir': 'd:/lib/ogre/OgreMain',
@@ -496,6 +483,14 @@ lib_OgreMain = {
     'ccflags': [],
     'cxxflags': [],
     'libs': [],
+
+    'configs': [
+        'common',
+        ],
+    'deps': [
+        'freetype',
+        'zziplib',
+        ],
     'install_dirs_map': {
         'include': 'include/OGRE',
         },
@@ -625,8 +620,24 @@ def dyn_OgreMain(lib, context):
     if 'win' not in target_os:
         lib.sources += 'src/OgreSearchOps.cpp'
 
+install = {
+    'uri': 'install',
+    'source_base_dir': 'd:/lib/ogre',
+    'type': 'config',
+    'deps': [
+        'OgreMain',
+        ],
+    'install_dirs_map': {
+        '': 'include/OGRE',
+        },
+    'public_headers': [
+        'include/OgreBuildSettings.h',
+        'include/OgreExports.h',
+        ],
+}
 
 export_libs = [
+    (lib_common, None),
     (lib_OgreMain, dyn_OgreMain),
-    (install_root, None),
+    (install, None),
 ]

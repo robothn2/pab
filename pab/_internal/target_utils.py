@@ -4,23 +4,21 @@ import os
 import re
 
 
-def _file_read(filename, mode='rU'):
-    with open(filename, mode=mode) as f:
-        # codecs.open() has different behavior than open() on python 2.6 so use
-        # open() and decode manually.
-        s = f.read()
-        try:
-            return s.decode('utf-8')
-        # AttributeError is for Py3 compatibility
-        except (UnicodeDecodeError, AttributeError):
-            return s
-
 def _str_find_first_of(s, seps):
     for sep in seps:
         if s.find(sep):
             return True
     return False
 
+
+'''
+A list derived class, supports:
+    li = ItemList('c1.c', 'c2.c', 'c3.c', base='~/src/myproj')
+    li -= ['c3.c', 'c4.c']  # -= list
+    li -= 'str'             # -= str
+    li -= r'^c[12]\.c'      # -= regex pattern
+    li += '*.c'             # += wildcard pattern, self.base must be set
+'''
 class ItemList(list):
     def __init__(self, *args, **kwargs):
         list.__init__(self, args)
@@ -65,7 +63,7 @@ class ItemList(list):
     def __isub__(self, other):
         if not other:
             return self
-        print('-', self.name, '-=', other)
+        # print('-', self.name, '-=', other)
         if isinstance(other, list):
             for item in other:
                 self._sub_str(item)
@@ -89,60 +87,11 @@ class ItemList(list):
             self.remove(s)
 
 
-class FileContext(dict):
-    def __init__(self, *args, **kwargs):
-        dict.__init__({})
-        self['options'] = {}
-        vars_normal = ['defines', 'public_include_dirs', 'include_dirs',
-                       'headers', 'ccflags', 'cxxflags', 'ldflags',
-                       'lib_dirs', 'libs', 'deps',
-                       ]
-        vars_regex = ['public_headers', 'sources']  # support regex add / sub
-        for v in vars_normal:
-            self[v] = ItemList(name=v)
-        for v in vars_regex:
-            self[v] = ItemList(name=v, base=kwargs['source_base_dir'])
-
-        for k, v in kwargs.items():
-            if isinstance(v, (str, dict)):
-                self[k] = v
-            elif isinstance(v, (list, tuple)):
-                if k in self:
-                    self[k] += v
-                else:
-                    self[k] = ItemList(v)
-            else:
-                print('* ignore key-value', k, v)
-
-        self.group_vars = list(args)
-
-    def __getattr__(self, name):
-        if name in self:
-            return self[name]
-        return None
-
-    def getVar(self, name):
-        for v in self.group_vars:
-            if name in v:
-                return v[name]
-        return None
-
-    def getOption(self, name):
-        return self['options'].get(name, False)
-
-    def parseFile(self, filepath, pattern):
-        with open(filepath, 'r', encoding='utf-8') as f:
-            lines = f.read()
-            result = re.findall(pattern, lines,
-                                re.RegexFlag.MULTILINE + re.RegexFlag.ASCII)
-            if result:
-                return {entry[0]: entry[1].strip('"') for entry in result}
-
-
-def parse_build_file(filepath):
+def parse_target_file(filepath):
     global_scope = {}
     local_scope = {}
-    content = _file_read(filepath)
+    with open(filepath, 'r', encoding='utf-8') as f:
+        content = f.read()
     try:
         exec(content, global_scope, local_scope)
     except SyntaxError as e:
@@ -183,9 +132,3 @@ if __name__ == '__main__':
     # regex -=
     sources -= [r'^files/file_path.*\.cc', 'files/file_path_watcher.h']
     print(sources)
-
-    context = FileContext(source_base_dir='d:/lib/ogre')
-    versions = context.parseFile(
-            'd:/lib/ogre/OgreMain/include/OgrePrerequisites.h',
-            r'^\s*#define\s+(OGRE_VERSION_\S+)\s+(.+)$')
-    print(versions)
