@@ -33,7 +33,6 @@ builder.build(target, top=0, check=False)
 # Todo
 * 定义文件: 支持环境检测: check_header, check_function
 * 定义文件: 支持生成头文件: export_header, gen_header
-* 使用 clang 编译出 arm 架构的 so
 * 显示变量的来源和变化历史
 * suggestion on fails:
 *   header not found: search header file in system
