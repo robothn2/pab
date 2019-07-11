@@ -37,7 +37,7 @@ class OS:
         return self.name == 'win' or self.name == 'win32'
 
     def getFullName(self, base_name, target_type='executable'):
-        prefix = '' if self.isWin() else 'lib'
+        prefix = '' if self.isWin() or target_type == 'executable' else 'lib'
         if prefix and base_name.startswith('lib'):
             prefix = ''
         return prefix + base_name + self.suffix[target_type]

@@ -17,15 +17,10 @@ class TargetContext(dict):
             self[v] = ItemList(name=v, base=kwargs['source_base_dir'])
 
         for k, v in kwargs.items():
-            if isinstance(v, (str, dict)):
-                self[k] = v
-            elif isinstance(v, (list, tuple)):
-                if k in self:
-                    self[k] += v
-                else:
-                    self[k] = ItemList(v)
+            if k in self:
+                self[k] += v
             else:
-                print('* ignore key-value', k, v)
+                self[k] = v
 
         self.group_vars = list(args)
 

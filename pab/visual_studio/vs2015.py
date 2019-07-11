@@ -194,8 +194,7 @@ class VS2015:
 
         if 'dst' in args:
             if cmd == 'link':
-                suffix = target.getSuffix(request)
-                dst = args['dst'] + suffix
+                dst = args['dst']
                 ret.append(f'/OUT:"{dst}"')
             elif cmd in ('cc', 'cxx'):
                 ret.append('/Fo:"{}"'.format(args['dst']))
