@@ -6,7 +6,7 @@ import re
 
 def _str_find_first_of(s, seps):
     for sep in seps:
-        if s.find(sep):
+        if s.find(sep) >= 0:
             return True
     return False
 
@@ -39,9 +39,6 @@ class ItemList(list):
         return self
 
     def _add_str(self, s):
-        if not s or not isinstance(s, str):
-            return
-
         if self.base:
             # support wildcard += if self.base available
             if s[0] == '^':
@@ -54,6 +51,7 @@ class ItemList(list):
                     path = os.path.relpath(f, self.base).replace('\\', '/')
                     self._append_str(path)
                 return
+
         self._append_str(s)
 
     def _append_str(self, s):

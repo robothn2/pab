@@ -1,8 +1,9 @@
 # coding: utf-8
-
 from ._internal.command import Command
 from ._internal.results import Results
 from .host_os.bin_utils import BinUtils
+import logging
+logger = logging.getLogger("pab")
 
 
 class Builder:
@@ -36,15 +37,15 @@ class Builder:
                     if isinstance(r[1], list):
                         cfg_queue += r[1]
                 else:
-                    print(cfg.name, 'disabled:', r[1])
+                    logger.info('disabled config: {} {}'.format(cfg.name, r[1]))
 
         self.configs.append(self.binutils)
 
         for cfg in self.configs:
             if hasattr(cfg, 'compositors'):
                 self.compositor = cfg.compositors
-                print('compositor:', cfg.name)
-        print('enabled config:', [cfg.name for cfg in self.configs])
+                logger.info('compositor: ' + cfg.name)
+        logger.info('enabled config: {}'.format([cfg.name for cfg in self.configs]))
 
     def build(self, target, **kwargs):
         self._collect_available_configs()
@@ -73,13 +74,13 @@ class Builder:
         src = kwargs['src']
         dst = kwargs.get('dst')  # maybe non-exist
         if (len(cmd_entry) > 1 and cmd_entry[1] == 'dst'):
-            print('=', cmd_name, dst)
+            logger.info('= {} {}'.format(cmd_name, dst))
         else:
-            print('=', cmd_name, src)
+            logger.info('= {} {}'.format(cmd_name, src))
+        logger.debug('- ' + cmd.getCmdLine())
         if kwargs.get('dryrun', False):
-            print('-', cmd.getCmdLine())
             return True, 'dryrun ok'
-        return cmd.execute(kwargs.get('verbose', False))
+        return cmd.execute()
 
     def _find_cmd_entry(self, cmd_name):
         for cfg in self.configs:

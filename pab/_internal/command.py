@@ -2,6 +2,9 @@
 
 import subprocess
 from pab._internal.output_analyze import output_analyze
+import logging
+logger = logging.getLogger("pab")
+
 
 '''
 A Command consists of multiple parts, each one includes many CommandPart which
@@ -10,8 +13,6 @@ A CommandPart can be a string for supportting special compiler, a tuple for
 supportting command composition, a lambda/function for supportting config
 specialization, and a list of string, a list of tuple.
 '''
-
-
 class Command:
     def __init__(self, **kwargs):
         self.executable = kwargs['executable']
@@ -27,10 +28,8 @@ class Command:
     def preprocess(self, *extra_args, **kwargs):
         filters = kwargs['filters']
         compositors = kwargs['compositors']
-        verbose = kwargs.get('verbose', False)
 
-        if verbose:
-            print('> compositor of', self.name)
+        logger.debug('> compositor of ' + self.name)
         self.appendixs = []
         self.cmds = [self.executable]  # executable must be first element
         # extra command args by provider
@@ -46,11 +45,9 @@ class Command:
                 continue
 
             for cmd_filter in resultByCfg:
-                if verbose:
-                    print('- compositor:', cmd_filter)
+                logger.debug('- compositor: ' + str(cmd_filter))
                 result = self._recursiveFilter(cmd_filter, compositors, kwargs)
-                if verbose:
-                    print('->', result)
+                logger.debug('-> ' + str(result))
                 self._addListOrStr(result)
 
         if cnt_before_filter == len(self.cmds) + len(self.appendixs):
@@ -65,7 +62,7 @@ class Command:
         return subprocess.list2cmdline(self.cmds) \
             + ' ' + ' '.join(self.appendixs)
 
-    def execute(self, verbose=False):
+    def execute(self):
         # using appendixs to avoid incorrect quote on cmd part which existing
         #   double quote `"`
         cmdline = self.getCmdLine()

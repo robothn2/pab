@@ -5,10 +5,16 @@ import re
 import shutil
 from .arch import file_detect
 from .target_context import TargetContext
+import logging
+logger = logging.getLogger("pab")
 
 
 class Target:
-    def __init__(self, tar, request, *deps):
+    def __init__(self, tar, request, *deps, **kwargs):
+        base = tar[0].get('source_base_dir')
+        if not os.path.isabs(base):
+            base = os.path.realpath(os.path.join(kwargs['root'], base))
+            tar[0]['source_base_dir'] = base
         self.dyn_setting = tar[1]
         self.request = request
         self.setting = TargetContext(**tar[0], **request.kwargs)
@@ -16,10 +22,7 @@ class Target:
         self.type = self.setting.get('type', 'staticLib')
         self.name = re.split(r'[./\\]', self.uri)[-1]
         self.std = self.setting.get('std', 'c++11')  # c99, c11, c++11, c++17
-        self.rootSource = tar[0].get('source_base_dir')
-        print('Target:', self.name,
-              'type:', self.type,
-              'source:', self.rootSource)
+        self.rootSource = base
 
         include_dirs = self.setting.get('include_dirs', [])
         exist_dirs = []
@@ -52,12 +55,6 @@ class Target:
         else:
             self.cmdFilters['cc'].append('-std=' + self.std)
 
-    def get(self, key, defaultValue):
-        return self.setting.get(key, defaultValue)
-
-    def getSuffix(self, request):
-        return request.targetOS.getExecutableSuffix(self.type)
-
     def isSharedLib(self):
         return self.type == 'sharedLib'
 
@@ -67,21 +64,20 @@ class Target:
     def filterCmd(self, cmd_name):
         return self.cmdFilters.get(cmd_name, [])
 
-    def apply(self, **kwargs):
+    def build(self, builder, **kwargs):
+        logger.info('== Target: {}, type: {}, base: {}'.format(
+                self.uri, self.type, self.rootSource))
+        # logger.debug('Setting init: ' + str(self.setting))
         if self.dyn_setting:
             self.dyn_setting(self.setting, self.setting)
-
-    def build(self, builder, **kwargs):
-        print('== Target:', self.uri, ', args:', kwargs)
-        self.apply()
-        # print('Target context:', self.setting)
+        logger.debug('Setting apply: ' + str(self.setting))
 
         objs = []
         created_dst_folders = []
-        for file in self.get('sources', []):
+        for file in self.setting.get('sources', []):
             # cache for sub folders
             if not isinstance(file, str):
-                print('invalid file:', file)
+                logger.warning(f'invalid file: {file}')
                 continue
             sub_folder = os.path.dirname(file)
             if sub_folder and sub_folder not in created_dst_folders:
@@ -135,7 +131,7 @@ class Target:
 
         builder.results.succeeded(executable)
         result = builder.execCommand('file', src=executable)
-        print(result[1])
+        logger.info(result[1])
 
         # copy public headers to $BUILD
         for header_file in self.setting.public_headers:
@@ -156,5 +152,5 @@ class Target:
             if not os.path.exists(dstfolder):
                 os.makedirs(dstfolder)
             src = os.path.realpath(os.path.join(self.rootSource, header_file))
-            print('- install header', src, '->', dst)
+            logger.debug(f'- install header {src} -> {dst}')
             shutil.copyfile(src, dst)

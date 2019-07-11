@@ -3,6 +3,8 @@
 import os
 from pab._internal.target_utils import parse_target_file
 from pab._internal.target import Target
+import logging
+logger = logging.getLogger("pab")
 
 
 class PabTargets:
@@ -14,6 +16,7 @@ class PabTargets:
         root = os.path.realpath(kwargs['root'])
         assert(os.path.exists(root))
         self.name = 'PabTargets(%s)' % root
+        self.root = root
         self._parse_pyfiles(root)
 
     def __str__(self):
@@ -40,7 +43,7 @@ class PabTargets:
             # [pending, depend_level, target]
             self.parsedTargets[uri] = [True, 0, parsed]
 
-    def _sort_targets_by_deps(self):
+    def _sort_targets_by_deps(self, kwargs):
         round_cnt = 0
         while True:
             found_pending = False
@@ -59,17 +62,17 @@ class PabTargets:
                 if not result:
                     continue
 
-                print(f'round {round_cnt}: {uri} all resolved')
-                entry[0] = False  # deps all resolved
+                logger.info(f'round {round_cnt}: {uri} all resolved')
+                entry[0] = False  # all deps & configs resolved
                 entry[1] = max(level_deps, level_cfgs) + 1
             if not found_pending:
-                print(f'round {round_cnt}: no more pending')
+                logger.info(f'round {round_cnt}: no more pending')
                 break  # no more
             round_cnt += 1
 
         sorted_uris = sorted(self.parsedTargets,
                              key=lambda x: self.parsedTargets[x][1])
-        print(sorted_uris)
+        logger.info(sorted_uris)
         return [self.parsedTargets[uri][2] for uri in sorted_uris]
 
     def _is_deps_all_resolved(self, deps, uri):
@@ -88,11 +91,11 @@ class PabTargets:
         return True, max_level
 
     def build(self, request, configs, builder, **kwargs):
-        sortedTars = self._sort_targets_by_deps()
+        sortedTars = self._sort_targets_by_deps(kwargs)
 
         print('=== Build:', self.name)
         for tar in sortedTars:
-            target = Target(tar, request)
+            target = Target(tar, request, root=self.root)
             self.appliedTargets[target.uri] = target
 
             configs.append(target)
