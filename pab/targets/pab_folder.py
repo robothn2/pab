@@ -130,5 +130,6 @@ class PabTargets:
                 if dep.isSharedLib():
                     ret.append(dep.artifact)
                 elif dep.isStaticLib():
+                    ret.append(('libPath', os.path.dirname(dep.artifact)))
                     ret.append(('lib', dep.name))
         return ret

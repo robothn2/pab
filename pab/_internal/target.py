@@ -79,6 +79,9 @@ class Target:
             self.dyn_setting(self.setting, self.setting)
         logger.debug('Setting apply: ' + str(self.setting))
 
+        if not self.isArtifact():
+            return
+
         objs = []
         created_dst_folders = []
         for file in self.setting.get('sources', []):
