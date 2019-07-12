@@ -12,7 +12,7 @@ import logging.handlers
 if __name__ == '__main__':
     logger = logging.getLogger("pab")
     if not logger.hasHandlers():
-        logger.setLevel(logging.INFO)
+        logger.setLevel(logging.DEBUG)
 
         log_to_stdout = logging.StreamHandler()
         log_to_stdout.setLevel(logging.INFO)
@@ -31,6 +31,6 @@ if __name__ == '__main__':
                       stl='llvm-libc++',  # 'gnu-libstdc++', 'llvm-libc++'
                       root_build='D:/lib/build')
 
-    target = PabTargets(root='test/hello')
+    target = PabTargets(root='test/jsoncpp')
     builder = Builder(request, compiler)
     builder.build(target, dryrun=False)

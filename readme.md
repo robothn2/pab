@@ -13,22 +13,21 @@ compiler = NDK(path='d:/lib/android-ndk-r14b', platform=9, compiler='gcc')
 request = Request(target_os='android', target_cpu='armv7a',
                   stl='llvm-libc++',
                   root_build='D:/lib/build')
-target = PabTargets(root='test/base', rootSource='D:/lib/chromium/base')
+target = PabTargets(root='test/hello')
 builder = Builder(request, compiler)
-builder.build(target, top=0, check=False)
+builder.build(target)
 
 # BuildFlow
-* 编译器：NDK gcc/llvm, VisualC, IntelC, LLVM8.0
-* 构建需求：target_os, target_cpu, target_platform(android: api level, win: sdk version)
-* 项目定义：通过定义文件(.py)解析 Targets
-* 编译: Target.sources -> intermediate .o files
-* 生成: .o files -> (StaticLib, SharedLib, Executable)
-* 安装: 将公共头文件、库文件、动态库文件、资源文件合并为 SDK, Framework, APP
+* Compiler: NDK gcc/llvm, VisualC, IntelC, LLVM8.0
+* Request: target_os, target_cpu, target_platform(android: api level, win: sdk version)
+* Define: define Targets in python script
+* Compile: Target.sources -> .o files
+* Link: .o files -> (StaticLib, SharedLib, Executable)
+* Install: generate SDK, Framework, APP
 
 # Features
-* 通过 python 文件定义 Targets，支持依赖关系
-* 编译生成的临时文件仅存在于指定的目的路径，方便清理和加速
-* 支持一次链接超多 .o 文件
+* define Targets in python script, support dependencies
+* link many .o files by using @FILE
 
 # Todo
 * 定义文件: 支持环境检测: check_header, check_function
@@ -40,5 +39,7 @@ builder.build(target, top=0, check=False)
 *   unresolved referenced function: link to which lib
 * interactive build mode: pause build flow, can resume it too
 * parellel build mode: as possible as soon, exit on fails, cannot resume
-* output ninja build script
+* generate ninja build script
+* generate visual studio project
+* generate xcode project
 
