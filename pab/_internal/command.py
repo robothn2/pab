@@ -2,8 +2,7 @@
 
 import subprocess
 from pab._internal.output_analyze import output_analyze
-import logging
-logger = logging.getLogger("pab")
+from pab._internal.log import logger
 
 
 '''

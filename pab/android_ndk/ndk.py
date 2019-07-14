@@ -2,8 +2,8 @@
 
 import os
 import re
-from pab.compiler.gcc import GCC
-from pab.compiler.clang import Clang
+from pab.interpreter.gcc import GCC
+from pab.interpreter.clang import Clang
 
 
 class NDKStl:

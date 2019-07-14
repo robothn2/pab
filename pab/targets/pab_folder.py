@@ -3,8 +3,7 @@
 import os
 from pab._internal.target_utils import parse_target_file
 from pab._internal.target import Target
-import logging
-logger = logging.getLogger("pab")
+from pab._internal.log import logger
 
 
 class PabTargets:

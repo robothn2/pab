@@ -2,8 +2,7 @@
 from ._internal.command import Command
 from ._internal.results import Results
 from .host_os.bin_utils import BinUtils
-import logging
-logger = logging.getLogger("pab")
+from ._internal.log import logger
 
 
 class Builder:

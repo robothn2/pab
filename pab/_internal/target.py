@@ -5,8 +5,7 @@ import re
 import shutil
 from .arch import file_detect
 from .target_context import TargetContext
-import logging
-logger = logging.getLogger("pab")
+from .log import logger
 
 
 class Target:

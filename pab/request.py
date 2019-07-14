@@ -3,8 +3,7 @@
 import os
 from ._internal.arch import arch_detect, os_detect, os_get_tags
 from ._internal.os import OS
-import logging
-logger = logging.getLogger("pab")
+from ._internal.log import logger
 
 
 class Request:
