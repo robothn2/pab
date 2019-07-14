@@ -103,32 +103,30 @@ class PabTargets:
 
             self.completedTargets[target.uri] = target
 
-    def filterCmd(self, cmd_name, kwargs):
+    def filterCmd(self, cmd, kwargs):
         # add command parts for target's deps
-        # todo: support configs
+        # todo: support merge configs
         # todo: support ccflags, cxxflags, ldflags, etc for cc/cxx
         target = kwargs.get('target')
         if not target or not target.isArtifact():
             return
 
-        ret = []
-        if cmd_name == 'cc' or cmd_name == 'cxx':
+        if cmd.name == 'cc' or cmd.name == 'cxx':
             # provide deps.public_include_dirs for cc/cxx
             for dep_name in target.getDepends():
                 dep = self.completedTargets.get(dep_name)
                 if not dep:
                     continue
-                ret.append(('includePath', dep.setting.public_include_dirs))
+                cmd.include_dirs += dep.setting.public_include_dirs
 
-        elif cmd_name == 'link':
+        elif cmd.name == 'link':
             # provide deps.artifact for link
             for dep_name in target.getDepends():
                 dep = self.completedTargets.get(dep_name)
                 if not dep or not dep.artifact:
                     continue
                 if dep.isSharedLib():
-                    ret.append(dep.artifact)
+                    cmd.sources += dep.artifact
                 elif dep.isStaticLib():
-                    ret.append(('libPath', os.path.dirname(dep.artifact)))
-                    ret.append(('lib', dep.name))
-        return ret
+                    cmd.lib_dirs += os.path.dirname(dep.artifact)
+                    cmd.libs += dep.name

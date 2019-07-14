@@ -16,14 +16,13 @@ class Request:
         arch = arch_detect(kwargs['target_cpu'])
         self.arch = arch[0]
         self.target_cpu = arch[1]
-        self.target_triple = self.target_cpu + '-' + self.target_os
         self.kwargs['target_os_tags'] = os_get_tags(self.target_os)
         self.stl = kwargs.get('stl', 'gnu-libstdc++')
         self.rootBuild = os.path.realpath(kwargs['root_build'])
         if not os.path.exists(self.rootBuild):
             os.makedirs(self.rootBuild)
-        logger.info('Request: {} {} {}'.format(
-                self.target_os, self.target_cpu, self.target_triple))
+        logger.info('Request: {} {}'.format(
+                self.target_os, self.target_cpu))
         logger.info('OSTags: {}'.format(self.kwargs['target_os_tags']))
 
     def hasMember(self, memberName):

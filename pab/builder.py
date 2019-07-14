@@ -66,7 +66,6 @@ class Builder:
         cmd = Command(name=cmd_name, executable=cmd_entry[0],
                       results=self.results)
         cmd.preprocess(*cmd_entry[2:],  # extra command args by provider
-                       cmd=cmd_name,
                        filters=self.configs, compositors=self.compositor,
                        **kwargs)
 

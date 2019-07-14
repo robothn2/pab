@@ -37,6 +37,7 @@ class Clang:
         self.prefix = kwargs.get('prefix', '')
         if os.path.isdir(self.prefix):
             self.prefix += os.sep
+        self.target_triple = ''
 
         self.cmds = {
                 'cc': (self.prefix + 'clang' + self.suffix, 'src', '-c', '-x', 'c'),
@@ -44,26 +45,6 @@ class Clang:
                 'ar': (self.prefix + 'ar' + self.suffix, 'dst', '-rcs'),
                 'link': (self.prefix + 'clang' + self.suffix, 'dst'),
                 #'ldd': (self.prefix + 'ld.bfd' + self.suffix, ),
-                }
-        self.cmdFilters = {
-                'cc': [
-                    ['-Wall'],
-                    lambda args: '--target=' + args['request'].target_triple,
-                    self._filterSrcListAndDst,
-                ],
-                'cxx': [
-                    ['-Wall'],
-                    lambda args: '--target=' + args['request'].target_triple,
-                    self._filterSrcListAndDst,
-                ],
-                'ar': [
-                    self._filterSrcListAndDst,
-                ],
-                'link': [
-                    # todo: clang compile object using msys64's gcc
-                    lambda args: '--target=' + args['request'].target_triple,
-                    self._filterSrcListAndDst,
-                ],
                 }
         self.compositors = {
                 'sysroot':      lambda path, args: f'--sysroot={path}',
@@ -74,42 +55,34 @@ class Clang:
                 }
 
     def matchRequest(self, request):
+        self.target_triple = request.target_cpu + '-' + request.target_os
         return True
 
     def queryCmd(self, cmd_name):
         return self.cmds.get(cmd_name)
 
-    def filterCmd(self, cmd_name, kwargs):
-        return self.cmdFilters.get(cmd_name)
+    def filterCmd(self, cmd, kwargs):
+        if cmd.name not in ('ar', 'cc', 'cxx', 'link'):
+            return
 
-    def _filterSrcListAndDst(self, args):
-        ret = []
-        request = args['request']
-        cmd = args['cmd']
+        dst = kwargs['dst']
+        if cmd.name == 'ar':
+            cmd.parts += dst
+        else:
+            cmd.parts += ['-o', dst]
 
-        if 'dst' in args:
-            dst = args['dst']
-            if cmd == 'ar':
-                ret.append(dst)
-            else:
-                ret += ['-o', dst]
-                if cmd == 'link' and args['target'].isSharedLib():
-                    ret += ['-shared', '-fpic']
-            args['dst'] = dst
+        if cmd.name == 'cc':
+            cmd.ccflags += ['-Wall', '--target=' + self.target_triple]
+        elif cmd.name == 'cxx':
+            cmd.cxxflags += ['-Wall', '--target=' + self.target_triple]
+            cmd.defines += '_LIBCPP_HAS_THREAD_API_PTHREAD'
 
-        if 'src' in args:
-            src = args['src']
-            if isinstance(src, str):
-                ret.append(src)
-            elif isinstance(src, list):
-                # write all source file path into file, and use @file
-                tmp_file = os.path.join(request.rootBuild, 'src_list.txt')
-                with open(tmp_file, 'w', encoding='utf-8') as f:
-                    for o in src:
-                        o = os.path.realpath(o)
-                        o = o.replace('\\', '/')
-                        f.write(o)
-                        f.write(' ')
-                    f.close()
-                ret.append('@' + tmp_file)
-        return ret
+        elif cmd.name == 'link':
+            cmd.ldflags += '--target=' + self.target_triple
+            cmd.composeSources(
+                    cmd.sources,
+                    os.path.join(kwargs['request'].rootBuild, 'src_list.txt'))
+            if kwargs['target'].isSharedLib():
+                cmd.ldflags += ['-shared', '-fpic']
+
+        cmd.translate(self.compositors)

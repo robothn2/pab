@@ -1,10 +1,10 @@
 # coding: utf-8
 
 import subprocess
+import os
 from pab._internal.output_analyze import output_analyze
+from pab._internal.target_utils import ItemList
 from pab._internal.log import logger
-
-
 '''
 A Command consists of multiple parts, each one includes many CommandPart which
 provided by a Plugin.
@@ -12,17 +12,62 @@ A CommandPart can be a string for supportting special compiler, a tuple for
 supportting command composition, a lambda/function for supportting config
 specialization, and a list of string, a list of tuple.
 '''
-class Command:
-    def __init__(self, **kwargs):
+
+_vars_normal = [
+        'defines', 'include_dirs', 'sources',
+        'ccflags', 'cxxflags', 'ldflags',
+        'lib_dirs', 'libs',
+        'parts',
+        ]
+
+
+class Command(dict):
+    def __init__(self, *args, **kwargs):
+        dict.__init__({})
         self.executable = kwargs['executable']
         self.name = kwargs['name']
         self.cmds = []
         self.appendixs = []  # collect args which including `"`
         self.dst = ''
         self.results = kwargs['results']
+        for v in _vars_normal:
+            self[v] = ItemList(name=v)
 
-    def __str__(self):
-        return 'Command(%s)' % self.name
+        for k, v in kwargs.items():
+            if k in self:
+                self[k] += v
+            else:
+                self[k] = v
+
+    def __getattr__(self, name):
+        if name in self:
+            return self[name]
+        return None
+
+    def __iadd__(self, other):
+        if not other:
+            return self
+        if isinstance(other, object):
+            # merge other into self
+            for k in _vars_normal:
+                if hasattr(other, k):
+                    self[k] += other.k
+        return self
+
+    def composeSources(self, sources, tmp_file_path):
+        # write all source file path into file, and use @file
+        tmp_file = tmp_file_path
+        with open(tmp_file, 'w', encoding='utf-8') as f:
+            for o in sources:
+                o = os.path.realpath(o)
+                o = o.replace('\\', '/')
+                f.write(o)
+                f.write(' ')
+            f.close()
+        self.parts += '@' + tmp_file
+
+    def translate(self, compositors):
+        pass
 
     def preprocess(self, *extra_args, **kwargs):
         filters = kwargs['filters']

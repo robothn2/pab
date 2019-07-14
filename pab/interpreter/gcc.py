@@ -17,22 +17,6 @@ class GCC:
                 'link': (self.prefix + 'gcc' + self.suffix, 'dst'),
                 'ldd': (self.prefix + 'ld.bfd' + self.suffix, ),
                 }
-        self.cmdFilters = {
-                'cc': [
-                    ['-Wall'],
-                    self._filterSrcListAndDst,
-                ],
-                'cxx': [
-                    ['-Wall'],
-                    self._filterSrcListAndDst,
-                ],
-                'ar': [
-                    self._filterSrcListAndDst,
-                ],
-                'link': [
-                    self._filterSrcListAndDst,
-                ],
-                }
         self.compositors = {
                 'sysroot':      lambda path, args: f'--sysroot={path}',
                 'includePath':  lambda path, args: ['-I', path],
@@ -44,16 +28,11 @@ class GCC:
     def matchRequest(self, request):
         return True
 
-    def queryCmd(self, cmd_name):
-        return self.cmds.get(cmd_name)
-
-    def filterCmd(self, cmd_name, kwargs):
-        return self.cmdFilters.get(cmd_name, [])
-
-    def _filterSrcListAndDst(self, args):
-        ret = []
-        request = args['request']
-        cmd = args['cmd']
+    # Interpreter.filterCmd must called at end of Config chain, translate all
+    # Command properties which like sources, libs, lib_dirs, include_dirs etc.
+    def filterCmd(self, cmd, kwargs):
+        if cmd.name not in ('ar', 'cc', 'cxx', 'link'):
+            return
 
         '''
         # compile
@@ -65,30 +44,22 @@ class GCC:
         gcc -shared -fpic -o libhello.so hello.o
         gcc -o hello main.c libhello.so
         '''
-        if 'dst' in args:
-            dst = args['dst']
-            dst = args['dst']
-            if cmd == 'ar':
-                ret.append(dst)
-            else:
-                ret += ['-o', dst]
-                if cmd == 'link' and args['target'].isSharedLib():
-                    ret += ['-shared', '-fpic']
-            args['dst'] = dst
+        if cmd.name == 'ar':
+            cmd.sources += cmd.dst
+        else:
+            cmd.parts += ['-o', cmd.dst]
 
-        if 'src' in args:
-            src = args['src']
-            if isinstance(src, str):
-                ret.append(src)
-            elif isinstance(src, list):
-                # write all source file path into file, and use @file
-                tmp_file = os.path.join(request.rootBuild, 'src_list.txt')
-                with open(tmp_file, 'w', encoding='utf-8') as f:
-                    for o in src:
-                        o = os.path.realpath(o)
-                        o = o.replace('\\', '/')
-                        f.write(o)
-                        f.write(' ')
-                    f.close()
-                ret.append('@' + tmp_file)
-        return ret
+        if cmd.name == 'cc':
+            cmd.ccflags += '-Wall'
+            cmd.parts += cmd.sources
+        elif cmd.name == 'cxx':
+            cmd.cxxflags += '-Wall'
+            cmd.parts += cmd.sources
+        elif cmd.name == 'link':
+            cmd.composeSources(
+                    cmd.sources,
+                    os.path.join(kwargs['request'].rootBuild, 'src_list.txt'))
+            if kwargs['target'].isSharedLib():
+                cmd.ldflags += ['-shared', '-fpic']
+
+        cmd.translate(self.compositors)

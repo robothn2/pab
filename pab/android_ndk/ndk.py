@@ -52,7 +52,6 @@ class NDK:
         self.rootStl = None
         self.sysroot = None
         self.libPaths = []
-        self.cmds = {}
         self.cmdFilters = {}
 
     def matchRequest(self, request):
@@ -83,49 +82,33 @@ class NDK:
                 os.path.join(self.root, 'sources/cxx-stl', request.stl),
                 arch=self.getCppLibSubfolder(request))
 
-        self.libPaths = [os.path.join(self.sysroot, 'usr/lib')]
-        self.libPaths.extend(self.rootStl.lib_dirs)
-
-        self.cmdFilters = {
-                'cc': [
-                    ('define', ['__ANDROID__', 'ANDROID']),
-                    ('sysroot', self.sysroot),
-                    ('sysroot', os.path.join(self.root, 'sysroot')),
-                    ('includePath', lambda kwargs: os.path.join(
-                        self.root,
-                        'sysroot/usr/include',
-                        self.getSysrootIncludeSubfolder(kwargs['request']))),
-                ],
-                'cxx': [
-                    ('define', ['__ANDROID__', 'ANDROID', '__ELF__']),
-                    ('sysroot', self.sysroot),
-                    ('sysroot', os.path.join(self.root, 'sysroot')),
-                    ('includePath', lambda kwargs: os.path.join(
-                        self.root,
-                        'sysroot/usr/include',
-                        self.getSysrootIncludeSubfolder(kwargs['request']))),
-                    ('includePath', self.rootStl.include_dirs),
-                ],
-                'link': [
-                    ('sysroot', self.sysroot),
-                ],
-                }
-
         if self.kwargs.get('compiler', 'gcc') == 'gcc':
             gcc = GCC(prefix=os.path.join(rootBin, executablePrefix),
                       suffix=request.hostOS.getExecutableSuffix())
             return True, [gcc]
 
-        clang = Clang(prefix=os.path.join(self.root, 'toolchains/llvm/prebuilt/windows-x86_64/bin'),
-                    suffix=request.hostOS.getExecutableSuffix())
-        self.cmdFilters['cxx'].append(('define', '_LIBCPP_HAS_THREAD_API_PTHREAD'))
+        clang = Clang(prefix=os.path.join(
+                self.root,
+                'toolchains/llvm/prebuilt/windows-x86_64/bin'),
+                suffix=request.hostOS.getExecutableSuffix())
         return True, [clang]
 
-    def queryCmd(self, cmd_name):
-        return self.cmds.get(cmd_name)
+    def filterCmd(self, cmd, kwargs):
+        if cmd.name == 'cc' or cmd.name == 'cxx':
+            cmd.defines += ['__ANDROID__', 'ANDROID', '__ELF__']
+            cmd.sysroot += [self.sysroot, os.path.join(self.root, 'sysroot')]
+            cmd.include_dirs += os.path.join(
+                        self.root,
+                        'sysroot/usr/include',
+                        self.getSysrootIncludeSubfolder(kwargs['request']))
+            if cmd.name == 'cxx':
+                cmd.include_dirs += self.rootStl.include_dirs
 
-    def filterCmd(self, cmd_name, kwargs):
-        return self.cmdFilters.get(cmd_name)
+        elif cmd.name == 'link':
+            cmd.sysroot += self.sysroot
+            cmd.lib_dirs += os.path.join(self.sysroot, 'usr/lib')
+            if cmd.name == 'cxx':
+                cmd.lib_dirs += self.rootStl.lib_dirs
 
     def _search_file(self, filename, paths):
         if not filename:
