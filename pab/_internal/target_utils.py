@@ -30,7 +30,7 @@ class ItemList(list):
     def __iadd__(self, other):
         if not other:
             return self
-        # print('-', self.name, '+=', other)
+        print('-', self.name, '+=', other)
         if isinstance(other, list):
             for item in other:
                 self._add_str(item)

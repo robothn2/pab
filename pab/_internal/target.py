@@ -43,9 +43,9 @@ class Target:
             return
 
         if self.std.startswith('c++'):
-            self.cmdFilters['cxx'].append('-std=' + self.std)
+            cmd.cxxflags += '-std=' + self.std
         else:
-            self.cmdFilters['cc'].append('-std=' + self.std)
+            cmd.ccflags += '-std=' + self.std
 
     def build(self, builder, **kwargs):
         logger.info('== Target: {}, type: {}, base: {}'.format(
@@ -77,24 +77,23 @@ class Target:
             if not detected.cmd:
                 builder.results.unhandled(file)
                 continue
-            result = detected.match(self.request)
-            if not result[0]:
-                builder.results.skipped(file, result[1])
+            result, reason = detected.match(self.request)
+            if not result:
+                builder.results.skipped(file, reason)
                 continue
 
             dst = os.path.join(self.request.rootBuild, file) + '.o'
-            result = builder.execCommand(
-                        detected.cmd, request=self.request,
-                        src=src, dst=dst, target=self,
-                        **kwargs)
-            if result[0]:
+            result, output = builder.execCommand(
+                        detected.cmd, sources=src, dst=dst,
+                        target=self, **kwargs)
+            if result:
                 builder.results.succeeded(file)
                 objs.append(dst)
 
-                # result = builder.execCommand('file', src=dst)
+                # result = builder.execCommand('file', sources=dst)
                 # print(result[1])
             else:
-                builder.results.error(file, result[1])
+                builder.results.error(file, output)
 
         if len(objs) == 0:
             return
@@ -107,17 +106,15 @@ class Target:
             os.makedirs(dstfolder)
 
         result = builder.execCommand(
-            'ar' if self.isStaticLib() else 'link',
-            request=self.request, src=objs,
-            dst=executable,
-            target=self, **kwargs)
+            'ar' if self.isStaticLib() else 'ld',
+            sources=objs, dst=executable, target=self, **kwargs)
         if not result[0]:
             builder.results.error(file, result[1])
             return
 
         self.artifact = executable
         builder.results.succeeded(self.artifact)
-        result = builder.execCommand('file', src=self.artifact)
+        result = builder.execCommand('file', sources=self.artifact)
         logger.info(result[1])
 
         # copy public headers to $BUILD

@@ -43,7 +43,7 @@ class Clang:
                 'cc': (self.prefix + 'clang' + self.suffix, 'src', '-c', '-x', 'c'),
                 'cxx': (self.prefix + 'clang' + self.suffix, 'src', '-c', '-x', 'c++'),
                 'ar': (self.prefix + 'ar' + self.suffix, 'dst', '-rcs'),
-                'link': (self.prefix + 'clang' + self.suffix, 'dst'),
+                'ld': (self.prefix + 'clang' + self.suffix, 'dst'),
                 #'ldd': (self.prefix + 'ld.bfd' + self.suffix, ),
                 }
         self.compositors = {
@@ -62,7 +62,7 @@ class Clang:
         return self.cmds.get(cmd_name)
 
     def filterCmd(self, cmd, kwargs):
-        if cmd.name not in ('ar', 'cc', 'cxx', 'link'):
+        if cmd.name not in ('ar', 'cc', 'cxx', 'ld'):
             return
 
         dst = kwargs['dst']
@@ -77,7 +77,7 @@ class Clang:
             cmd.cxxflags += ['-Wall', '--target=' + self.target_triple]
             cmd.defines += '_LIBCPP_HAS_THREAD_API_PTHREAD'
 
-        elif cmd.name == 'link':
+        elif cmd.name == 'ld':
             cmd.ldflags += '--target=' + self.target_triple
             cmd.composeSources(
                     cmd.sources,

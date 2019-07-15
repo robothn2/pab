@@ -11,18 +11,18 @@ class GCC:
         self.suffix = kwargs.get('suffix', '')
 
         self.cmds = {
-                'cc': (self.prefix + 'gcc' + self.suffix, 'src', '-c', ),
-                'cxx': (self.prefix + 'g++' + self.suffix, 'src', '-c', ),
-                'ar': (self.prefix + 'ar' + self.suffix, 'dst', '-rcs'),
-                'link': (self.prefix + 'gcc' + self.suffix, 'dst'),
-                'ldd': (self.prefix + 'ld.bfd' + self.suffix, ),
+                'cc':   (self.prefix + 'gcc' + self.suffix, '-c'),
+                'cxx':  (self.prefix + 'g++' + self.suffix, '-c'),
+                'ar':   (self.prefix + 'ar'  + self.suffix, '-rcs'),
+                'ld': (self.prefix + 'gcc' + self.suffix, ),
+                'ldd':  (self.prefix + 'ld.bfd' + self.suffix, ),
                 }
         self.compositors = {
-                'sysroot':      lambda path, args: f'--sysroot={path}',
-                'includePath':  lambda path, args: ['-I', path],
-                'libPath':      lambda path, args: ['-L', path],
-                'lib':          lambda path, args: f'-l{path}',
-                'define':       lambda macro, args: f'-D{macro}',
+                'sysroots':      lambda path, args: f'--sysroot={path}',
+                'include_dirs':  lambda path, args: ['-I', path],
+                'lib_dirs':      lambda path, args: ['-L', path],
+                'libs':          lambda path, args: f'-l{path}',
+                'defines':       lambda macro, args: f'-D{macro}',
                 }
 
     def matchRequest(self, request):
@@ -31,7 +31,7 @@ class GCC:
     # Interpreter.filterCmd must called at end of Config chain, translate all
     # Command properties which like sources, libs, lib_dirs, include_dirs etc.
     def filterCmd(self, cmd, kwargs):
-        if cmd.name not in ('ar', 'cc', 'cxx', 'link'):
+        if cmd.name not in ('ar', 'cc', 'cxx', 'ld'):
             return
 
         '''
@@ -55,11 +55,11 @@ class GCC:
         elif cmd.name == 'cxx':
             cmd.cxxflags += '-Wall'
             cmd.parts += cmd.sources
-        elif cmd.name == 'link':
+        elif cmd.name == 'ld':
             cmd.composeSources(
                     cmd.sources,
                     os.path.join(kwargs['request'].rootBuild, 'src_list.txt'))
             if kwargs['target'].isSharedLib():
                 cmd.ldflags += ['-shared', '-fpic']
 
-        cmd.translate(self.compositors)
+        cmd.translate(self.compositors, kwargs)

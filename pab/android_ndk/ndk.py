@@ -96,7 +96,7 @@ class NDK:
     def filterCmd(self, cmd, kwargs):
         if cmd.name == 'cc' or cmd.name == 'cxx':
             cmd.defines += ['__ANDROID__', 'ANDROID', '__ELF__']
-            cmd.sysroot += [self.sysroot, os.path.join(self.root, 'sysroot')]
+            cmd.sysroots += [self.sysroot, os.path.join(self.root, 'sysroot')]
             cmd.include_dirs += os.path.join(
                         self.root,
                         'sysroot/usr/include',
@@ -104,8 +104,8 @@ class NDK:
             if cmd.name == 'cxx':
                 cmd.include_dirs += self.rootStl.include_dirs
 
-        elif cmd.name == 'link':
-            cmd.sysroot += self.sysroot
+        elif cmd.name == 'ld':
+            cmd.sysroots += self.sysroot
             cmd.lib_dirs += os.path.join(self.sysroot, 'usr/lib')
             if cmd.name == 'cxx':
                 cmd.lib_dirs += self.rootStl.lib_dirs

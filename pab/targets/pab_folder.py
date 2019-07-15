@@ -90,16 +90,16 @@ class PabTargets:
             max_level = max(max_level, depend_tar[1])
         return True, max_level
 
-    def build(self, request, configs, builder, **kwargs):
+    def build(self, request, builder, **kwargs):
         sortedTars = self._sort_targets_by_deps(kwargs)
 
         logger.info('= Build: ' + self.name)
         for tar in sortedTars:
             target = Target(tar, request, root=self.root)
 
-            configs.append(target)
+            builder.configs.append(target)
             target.build(builder, **self.kwargs, **kwargs)
-            configs.remove(target)
+            builder.configs.remove(target)
 
             self.completedTargets[target.uri] = target
 
@@ -119,7 +119,7 @@ class PabTargets:
                     continue
                 cmd.include_dirs += dep.setting.public_include_dirs
 
-        elif cmd.name == 'link':
+        elif cmd.name == 'ld':
             # provide deps.artifact for link
             for dep_name in target.getDepends():
                 dep = self.completedTargets.get(dep_name)

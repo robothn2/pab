@@ -7,7 +7,7 @@ class TargetContext(dict):
         dict.__init__({})
         self['options'] = {}
         vars_normal = ['defines', 'public_include_dirs', 'include_dirs',
-                       'headers', 'ccflags', 'cxxflags', 'ldflags',
+                       'headers', 'sysroots', 'ccflags', 'cxxflags', 'ldflags',
                        'lib_dirs', 'libs', 'deps',
                        ]
         vars_pattern = ['public_headers', 'sources']  # support pattern add/sub

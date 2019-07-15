@@ -36,7 +36,7 @@ class VS2015:
         toolchain.registerCommand(self, 'cxx',
                                   os.path.join(self.root, r'VC\bin\cl.exe'))
         #toolchain.registerCommand(self, 'as', self.prefix + 'as' + self.postfix)
-        toolchain.registerCommand(self, 'link',
+        toolchain.registerCommand(self, 'ld',
                                   os.path.join(self.root, r'VC\bin\link.exe'))
 
         # $VSROOT\VC\bin\amd64_x86\CL.exe /c /I"..\..\include" /Zi /nologo /W1 /WX- /Od /Oy- /D JSON_DLL /D WIN32 /D _WINDOWS /D _SILENCE_STDEXT_HASH_DEPRECATION_WARNINGS /D NDEBUG /D _USING_V110_SDK71_ /D _UNICODE /D UNICODE /Gm- /EHsc /MD /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"../../build/int/Publish2015/QYTest/" /Fd"../../build/int/Publish2015/QYTest/vc140.pdb" /Gd /TP /wd4819 /analyze- /errorReport:queue ..\..\src\QYTest\main.cpp ..\..\src\QYTest\stdafx.cpp
@@ -50,7 +50,7 @@ class VS2015:
                 ])
 
         # $VSROOT\VC\bin\amd64_x86\link.exe /ERRORREPORT:QUEUE /OUT:"../../build/worker.exe" /NOLOGO /LIBPATH:..\..\..\..\prebuild\vs2015\Win32\Release jsoncpp.lib gbase.lib gtest.lib Engine3.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"../../build/EngineWorker.pdb" /SUBSYSTEM:CONSOLE,"5.01" /LARGEADDRESSAWARE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"../../build/EngineWorker.lib" /MACHINE:X86 /SAFESEH ../../build/int/EngineWorker.obj
-        toolchain.registerCommandFilter(self, 'link', [
+        toolchain.registerCommandFilter(self, 'ld', [
                     ['/nologo',
                      # '/errorReport:queue', '/TLBID:1',
                      #'/MANIFEST', '''/MANIFESTUAC:"level='asInvoker' uiAccess='false'"''', '/manifest:embed',
@@ -154,7 +154,7 @@ class VS2015:
         #       C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\atlmfc\lib
         target_platform_ver = request.get('target_platform_ver', '10.0.17763.0')
         if target_platform_ver == '7.1':
-            if cmd == 'link':
+            if cmd == 'ld':
                 ret.append(('libPath', [
                         r'C:\Program Files (x86)\Microsoft SDKs\Windows\v7.1A\Lib'
                         ]))
@@ -165,7 +165,7 @@ class VS2015:
 
         elif re.match(r'10\.\d+\.\d+\.\d+', target_platform_ver):
             # default windows kits: 10.0.xxxxx.0
-            if cmd == 'link':
+            if cmd == 'ld':
                 ret.append(('libPath', [
                         fr'C:\Program Files (x86)\Windows Kits\10\Lib\{target_platform_ver}\ucrt\x86',
                         fr'C:\Program Files (x86)\Windows Kits\10\Lib\{target_platform_ver}\um\x86',
@@ -179,7 +179,7 @@ class VS2015:
 
         else:
             # default windows sdk: 8.1
-            if cmd == 'link':
+            if cmd == 'ld':
                 ret.append(('libPath', [
                         r'C:\Program Files (x86)\Windows Kits\8.1\Lib\winv6.3\um\x86',  # only 'um' exist
                         r'C:\Program Files (x86)\Microsoft SDKs\Windows\v7.1A\Lib',
@@ -193,7 +193,7 @@ class VS2015:
             # '/D', '_USING_V110_SDK71_',
 
         if 'dst' in args:
-            if cmd == 'link':
+            if cmd == 'ld':
                 dst = args['dst']
                 ret.append(f'/OUT:"{dst}"')
             elif cmd in ('cc', 'cxx'):

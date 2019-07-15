@@ -11,7 +11,7 @@ class Builder:
         self.request = request
         self.results = Results()
         self.configs = []
-        self.compositor = None
+        self.interpreter = None
         self.binutils = BinUtils(suffix=request.hostOS.getExecutableSuffix())
 
     def _collect_available_configs(self):
@@ -41,20 +41,20 @@ class Builder:
         self.configs.append(self.binutils)
 
         for cfg in self.configs:
-            if hasattr(cfg, 'compositors'):
-                self.compositor = cfg.compositors
-                logger.info('compositor: ' + cfg.name)
+            if hasattr(cfg, 'cmds'):
+                self.interpreter = cfg
+                logger.info('interpreter: ' + cfg.name)
         logger.info('enabled config: {}'.format([cfg.name for cfg in self.configs]))
 
-    def build(self, target, **kwargs):
+    def build(self, targets, **kwargs):
         self._collect_available_configs()
 
-        self.results.reset(title=str(target))
-        self.configs.append(target)
+        self.results.reset(title=str(targets))
+        self.configs.append(targets)
 
-        target.build(self.request, self.configs, self, **kwargs)
+        targets.build(self.request, self, **kwargs)
 
-        self.configs.remove(target)
+        self.configs.remove(targets)
         self.results.dump()
 
     def execCommand(self, cmd_name, **kwargs):
@@ -62,19 +62,20 @@ class Builder:
             return (False, None)
 
         cmd_entry = self._find_cmd_entry(cmd_name)
+        print(cmd_name, cmd_entry)
         assert(isinstance(cmd_entry, tuple))
         cmd = Command(name=cmd_name, executable=cmd_entry[0],
                       results=self.results)
-        cmd.preprocess(*cmd_entry[2:],  # extra command args by provider
-                       filters=self.configs, compositors=self.compositor,
+
+        cmd.preprocess(self.interpreter, *cmd_entry[1:],  # extra args from command provider
+                       request=self.request, configs=self.configs,
                        **kwargs)
 
-        src = kwargs['src']
-        dst = kwargs.get('dst')  # maybe non-exist
-        if (len(cmd_entry) > 1 and cmd_entry[1] == 'dst'):
-            logger.info('= {} {}'.format(cmd_name, dst))
+        sources = kwargs['sources']
+        if (len(sources) == 1):
+            logger.info('= {} {}'.format(cmd_name, sources[0]))
         else:
-            logger.info('= {} {}'.format(cmd_name, src))
+            logger.info('= {} {}'.format(cmd_name, kwargs['dst']))
         logger.debug('- ' + cmd.getCmdLine())
         if kwargs.get('dryrun', False):
             return True, 'dryrun ok'
@@ -82,9 +83,9 @@ class Builder:
 
     def _find_cmd_entry(self, cmd_name):
         for cfg in self.configs:
-            if not hasattr(cfg, 'queryCmd'):
+            if not hasattr(cfg, 'cmds'):
                 continue
-            entry = cfg.queryCmd(cmd_name)
+            entry = cfg.cmds[cmd_name]
             if entry:
                 return entry
         return None

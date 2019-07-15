@@ -2,9 +2,9 @@
 
 import subprocess
 import os
-from pab._internal.output_analyze import output_analyze
-from pab._internal.target_utils import ItemList
-from pab._internal.log import logger
+from .output_analyze import output_analyze
+from .target_utils import ItemList
+from .log import logger
 '''
 A Command consists of multiple parts, each one includes many CommandPart which
 provided by a Plugin.
@@ -13,8 +13,8 @@ supportting command composition, a lambda/function for supportting config
 specialization, and a list of string, a list of tuple.
 '''
 
-_vars_normal = [
-        'defines', 'include_dirs', 'sources',
+_props_of_cmd = [
+        'defines', 'include_dirs', 'sysroots', 'sources',
         'ccflags', 'cxxflags', 'ldflags',
         'lib_dirs', 'libs',
         'parts',
@@ -30,7 +30,7 @@ class Command(dict):
         self.appendixs = []  # collect args which including `"`
         self.dst = ''
         self.results = kwargs['results']
-        for v in _vars_normal:
+        for v in _props_of_cmd:
             self[v] = ItemList(name=v)
 
         for k, v in kwargs.items():
@@ -49,7 +49,7 @@ class Command(dict):
             return self
         if isinstance(other, object):
             # merge other into self
-            for k in _vars_normal:
+            for k in _props_of_cmd:
                 if hasattr(other, k):
                     self[k] += other.k
         return self
@@ -66,44 +66,44 @@ class Command(dict):
             f.close()
         self.parts += '@' + tmp_file
 
-    def translate(self, compositors):
-        pass
+    def translate(self, compositors, kwargs):
+        for prop in ('defines', 'sysroots', 'include_dirs', 'lib_dirs', 'libs'):
+            c = compositors.get('define')
+            if not c:
+                continue
+            for v in self[prop]:
+                self._addCmdPart(c(v, kwargs))
 
-    def preprocess(self, *extra_args, **kwargs):
-        filters = kwargs['filters']
-        compositors = kwargs['compositors']
+        # 'ccflags', 'cxxflags', 'ldflags',
+        values = self.get(self.name + 'flags')
+        if values:
+            for v in values:
+                self._addCmdPart(v)
 
-        logger.debug('> compositor of ' + self.name)
+        for v in self['sources']:
+            self._addCmdPart(v)
+        print('interpreter translate', self)
+
+    def preprocess(self, interpreter, *extra_args, **kwargs):
         self.appendixs = []
         self.cmds = [self.executable]  # executable must be first element
         # extra command args by provider
         for arg in extra_args:
             self._addCmdPart(arg)
 
-        cnt_before_filter = len(self.cmds) + len(self.appendixs)
-        for cfg in filters:
-            if not hasattr(cfg, 'filterCmd'):
+        self.sources += kwargs.get('sources')
+        self.dst = kwargs.get('dst')
+        for cfg in kwargs['configs']:
+            if cfg == interpreter or not hasattr(cfg, 'filterCmd'):
                 continue
-            resultByCfg = cfg.filterCmd(self.name, kwargs)
-            if not resultByCfg:
-                continue
+            cfg.filterCmd(self, kwargs)
 
-            for cmd_filter in resultByCfg:
-                logger.debug('- compositor: ' + str(cmd_filter))
-                result = self._recursiveFilter(cmd_filter, compositors, kwargs)
-                logger.debug('-> ' + str(result))
-                self._addListOrStr(result)
-
-        if cnt_before_filter == len(self.cmds) + len(self.appendixs):
-            # support simple command only accept 'src' parameter'
-            src = kwargs.get('src')
-            if src:
-                self._addListOrStr(src)
-
-        return kwargs.get('dst', None)
+        if hasattr(interpreter, 'filterCmd'):
+            interpreter.filterCmd(self, kwargs)
 
     def getCmdLine(self):
         return subprocess.list2cmdline(self.cmds) \
+            + ' ' + ' '.join(self.parts) \
             + ' ' + ' '.join(self.appendixs)
 
     def execute(self):
@@ -116,63 +116,9 @@ class Command(dict):
             return False, error
         return True, output
 
-    def _recursiveFilter(self, cmd_filter, compositors, kwargs):
-        if isinstance(cmd_filter, str):
-            return cmd_filter
-
-        elif isinstance(cmd_filter, list):
-            # GCC: ['-c', '-Wall']
-            ret = []
-            for f in cmd_filter:
-                result = self._recursiveFilter(f, compositors, kwargs)
-                self._combineListAndResult(ret, result)
-            return ret
-
-        elif callable(cmd_filter):
-            return self._recursiveFilter(cmd_filter(kwargs),
-                                         compositors, kwargs)
-
-        elif isinstance(cmd_filter, tuple):
-            assert(len(cmd_filter) == 2)
-            compositor = compositors.get(cmd_filter[0], None)
-            assert(callable(compositor))
-            param = cmd_filter[1]
-            if isinstance(param, str):
-                # ('sysroot', self.sysroot)
-                return self._recursiveFilter(compositor(param, kwargs),
-                                             compositors, kwargs)
-            elif isinstance(param, list):
-                # ('libPath', ['lib', '../lib'])
-                ret = []
-                for p in param:
-                    result = compositor(p, kwargs)
-                    self._combineListAndResult(
-                        ret,
-                        self._recursiveFilter(result, compositors, kwargs))
-                return ret
-
-            elif callable(param):
-                # ('includePath', lambda kwargs: kwargs['config'].getArch())
-                result = compositor(param(kwargs), kwargs)
-                return self._recursiveFilter(result, compositors, kwargs)
-
-        raise Exception('Invalid filter:', cmd_filter)
-
-    @staticmethod
-    def _combineListAndResult(listExist, result):
-        if isinstance(result, list):
-            listExist.extend(result)
-        elif isinstance(result, str):
-            listExist.append(result)
-
-    def _addListOrStr(self, result):
-        if isinstance(result, list):
-            for part in result:
-                self._addCmdPart(part)
-        elif isinstance(result, str):
-            self._addCmdPart(result)
-
     def _addCmdPart(self, part):
+        if not part:
+            return
         if '"' in part:
             self.appendixs.append(part)
         else:

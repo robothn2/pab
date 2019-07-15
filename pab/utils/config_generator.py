@@ -12,10 +12,10 @@ class ConfigGenerator:
         self.config = None
         self.tmpFile = os.path.realpath('pabtemp.c')
         self.tmpFileOut = self.tmpFile + '.o'
-        
+
     def registerAll(self, toolchain):
         pass
-    
+
     def checkAll(self, toolchain, config):
         self.toolchain = toolchain
         self.config = config
@@ -74,7 +74,7 @@ class ConfigGenerator:
 
     def check_cc(self, option_name, headers, code):
         self.options[option_name] = self.test_code('cc', headers, code)
-        
+
     def test_code(self, cmd, headers, code):
         content = ''
         if isinstance(headers, str):
@@ -84,7 +84,7 @@ class ConfigGenerator:
                 content += self.print_include(header)
         content += 'int main(void) {' + code + '; return 0; }'
         return self.test_cpp(cmd, content)
-        
+
     def print_include(self, header):
         if not header:
             return ''
