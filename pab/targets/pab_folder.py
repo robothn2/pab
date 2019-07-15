@@ -123,6 +123,7 @@ class PabTargets:
             # provide deps.artifact for link
             for dep_name in target.getDepends():
                 dep = self.completedTargets.get(dep_name)
+                print('?', dep.artifact)
                 if not dep or not dep.artifact:
                     continue
                 if dep.isSharedLib():

@@ -26,11 +26,12 @@ class ItemList(list):
         if self.base:
             self.base = os.path.realpath(self.base)
         self.name = kwargs.get('name')
+        self.unique = kwargs.get('unique', True)
 
     def __iadd__(self, other):
         if not other:
             return self
-        print('-', self.name, '+=', other)
+        # print('-', self.name, '+=', other)
         if isinstance(other, list):
             for item in other:
                 self._add_str(item)
@@ -55,7 +56,7 @@ class ItemList(list):
         self._append_str(s)
 
     def _append_str(self, s):
-        if s not in self:
+        if not self.unique or s not in self:
             self.append(s)
 
     def __isub__(self, other):

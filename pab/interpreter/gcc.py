@@ -45,21 +45,14 @@ class GCC:
         gcc -o hello main.c libhello.so
         '''
         if cmd.name == 'ar':
-            cmd.sources += cmd.dst
+            cmd.addPart(cmd.dst)  # .a must add first
         else:
             cmd.parts += ['-o', cmd.dst]
 
         if cmd.name == 'cc':
             cmd.ccflags += '-Wall'
-            cmd.parts += cmd.sources
         elif cmd.name == 'cxx':
             cmd.cxxflags += '-Wall'
-            cmd.parts += cmd.sources
         elif cmd.name == 'ld':
-            cmd.composeSources(
-                    cmd.sources,
-                    os.path.join(kwargs['request'].rootBuild, 'src_list.txt'))
             if kwargs['target'].isSharedLib():
                 cmd.ldflags += ['-shared', '-fpic']
-
-        cmd.translate(self.compositors, kwargs)

@@ -17,7 +17,6 @@ _props_of_cmd = [
         'defines', 'include_dirs', 'sysroots', 'sources',
         'ccflags', 'cxxflags', 'ldflags',
         'lib_dirs', 'libs',
-        'parts',
         ]
 
 
@@ -32,6 +31,7 @@ class Command(dict):
         self.results = kwargs['results']
         for v in _props_of_cmd:
             self[v] = ItemList(name=v)
+        self['parts'] = ItemList(name='parts', unique=False)
 
         for k, v in kwargs.items():
             if k in self:
@@ -54,11 +54,16 @@ class Command(dict):
                     self[k] += other.k
         return self
 
-    def composeSources(self, sources, tmp_file_path):
+    def _composeSources(self, tmp_file_path):
         # write all source file path into file, and use @file
+        # print('?', len(self.sources), isinstance(self.sources, ItemList))
+        if len(self.sources) < 5:
+            self.parts += self.sources
+            return
+
         tmp_file = tmp_file_path
         with open(tmp_file, 'w', encoding='utf-8') as f:
-            for o in sources:
+            for o in self.sources:
                 o = os.path.realpath(o)
                 o = o.replace('\\', '/')
                 f.write(o)
@@ -66,40 +71,41 @@ class Command(dict):
             f.close()
         self.parts += '@' + tmp_file
 
-    def translate(self, compositors, kwargs):
+    def _translate(self, compositors, kwargs):
+        self._composeSources(
+                os.path.join(kwargs['request'].rootBuild, 'src_list.txt'))
+
         for prop in ('defines', 'sysroots', 'include_dirs', 'lib_dirs', 'libs'):
-            c = compositors.get('define')
+            c = compositors.get(prop)
             if not c:
                 continue
             for v in self[prop]:
-                self._addCmdPart(c(v, kwargs))
+                self.parts += c(v, kwargs)
 
         # 'ccflags', 'cxxflags', 'ldflags',
-        values = self.get(self.name + 'flags')
-        if values:
-            for v in values:
-                self._addCmdPart(v)
-
-        for v in self['sources']:
-            self._addCmdPart(v)
-        print('interpreter translate', self)
+        self.parts += self.get(self.name + 'flags')
 
     def preprocess(self, interpreter, *extra_args, **kwargs):
         self.appendixs = []
         self.cmds = [self.executable]  # executable must be first element
         # extra command args by provider
         for arg in extra_args:
-            self._addCmdPart(arg)
+            self.addPart(arg)
 
-        self.sources += kwargs.get('sources')
+        self.sources += kwargs.pop('sources')
         self.dst = kwargs.get('dst')
-        for cfg in kwargs['configs']:
+        for cfg in kwargs.pop('configs', []):
             if cfg == interpreter or not hasattr(cfg, 'filterCmd'):
                 continue
             cfg.filterCmd(self, kwargs)
 
         if hasattr(interpreter, 'filterCmd'):
             interpreter.filterCmd(self, kwargs)
+
+        if hasattr(interpreter, 'compositors'):
+            self._translate(interpreter.compositors, kwargs)
+        else:
+            self.parts += self.sources
 
     def getCmdLine(self):
         return subprocess.list2cmdline(self.cmds) \
@@ -116,7 +122,7 @@ class Command(dict):
             return False, error
         return True, output
 
-    def _addCmdPart(self, part):
+    def addPart(self, part):
         if not part:
             return
         if '"' in part:

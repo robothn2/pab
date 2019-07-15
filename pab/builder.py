@@ -11,7 +11,7 @@ class Builder:
         self.request = request
         self.results = Results()
         self.configs = []
-        self.interpreter = None
+        self.interpreters = []
         self.binutils = BinUtils(suffix=request.hostOS.getExecutableSuffix())
 
     def _collect_available_configs(self):
@@ -36,15 +36,17 @@ class Builder:
                     if isinstance(r[1], list):
                         cfg_queue += r[1]
                 else:
-                    logger.info('disabled config: {} {}'.format(cfg.name, r[1]))
+                    logger.info('disabled config: {} {}'.format(
+                            cfg.name, r[1]))
 
         self.configs.append(self.binutils)
 
         for cfg in self.configs:
             if hasattr(cfg, 'cmds'):
-                self.interpreter = cfg
+                self.interpreters.append(cfg)
                 logger.info('interpreter: ' + cfg.name)
-        logger.info('enabled config: {}'.format([cfg.name for cfg in self.configs]))
+        logger.info('enabled config: {}'.format(
+                [cfg.name for cfg in self.configs]))
 
     def build(self, targets, **kwargs):
         self._collect_available_configs()
@@ -61,31 +63,28 @@ class Builder:
         if not cmd_name:
             return (False, None)
 
-        cmd_entry = self._find_cmd_entry(cmd_name)
-        print(cmd_name, cmd_entry)
+        cmd_entry, interpreter = self._find_cmd_entry(cmd_name)
         assert(isinstance(cmd_entry, tuple))
         cmd = Command(name=cmd_name, executable=cmd_entry[0],
                       results=self.results)
 
-        cmd.preprocess(self.interpreter, *cmd_entry[1:],  # extra args from command provider
+        cmd.preprocess(interpreter,
+                       *cmd_entry[1:],  # extra args from command provider
                        request=self.request, configs=self.configs,
                        **kwargs)
 
-        sources = kwargs['sources']
-        if (len(sources) == 1):
-            logger.info('= {} {}'.format(cmd_name, sources[0]))
-        else:
-            logger.info('= {} {}'.format(cmd_name, kwargs['dst']))
-        logger.debug('- ' + cmd.getCmdLine())
+        logger.info('= {} {}'.format(cmd.name,
+                    cmd.dst or cmd.sources[0]))
+        logger.info('cmdline: ' + cmd.getCmdLine())
         if kwargs.get('dryrun', False):
             return True, 'dryrun ok'
         return cmd.execute()
 
     def _find_cmd_entry(self, cmd_name):
-        for cfg in self.configs:
+        for cfg in self.interpreters:
             if not hasattr(cfg, 'cmds'):
                 continue
-            entry = cfg.cmds[cmd_name]
+            entry = cfg.cmds.get(cmd_name)
             if entry:
-                return entry
-        return None
+                return entry, cfg
+        return None, None

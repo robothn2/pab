@@ -105,17 +105,17 @@ class Target:
         if not os.path.exists(dstfolder):
             os.makedirs(dstfolder)
 
-        result = builder.execCommand(
+        result, reason = builder.execCommand(
             'ar' if self.isStaticLib() else 'ld',
             sources=objs, dst=executable, target=self, **kwargs)
-        if not result[0]:
-            builder.results.error(file, result[1])
+        if not result:
+            builder.results.error(file, reason)
             return
 
         self.artifact = executable
         builder.results.succeeded(self.artifact)
-        result = builder.execCommand('file', sources=self.artifact)
-        logger.info(result[1])
+        result, output = builder.execCommand('file', sources=self.artifact)
+        logger.info(output)
 
         # copy public headers to $BUILD
         for header_file in self.setting.public_headers:
