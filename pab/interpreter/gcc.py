@@ -1,7 +1,5 @@
 # coding: utf-8
 
-import os
-
 
 class GCC:
     def __init__(self, **kwargs):
@@ -10,14 +8,14 @@ class GCC:
         self.prefix = kwargs.get('prefix', '')
         self.suffix = kwargs.get('suffix', '')
 
-        self.cmds = {
+        self._cmds = {
                 'cc':   (self.prefix + 'gcc' + self.suffix, '-c'),
                 'cxx':  (self.prefix + 'g++' + self.suffix, '-c'),
                 'ar':   (self.prefix + 'ar'  + self.suffix, '-rcs'),
-                'ld': (self.prefix + 'gcc' + self.suffix, ),
+                'ld':   (self.prefix + 'gcc' + self.suffix, ),
                 'ldd':  (self.prefix + 'ld.bfd' + self.suffix, ),
                 }
-        self.compositors = {
+        self._compositors = {
                 'sysroots':      lambda path, args: f'--sysroot={path}',
                 'include_dirs':  lambda path, args: ['-I', path],
                 'lib_dirs':      lambda path, args: ['-L', path],
@@ -28,9 +26,15 @@ class GCC:
     def matchRequest(self, request):
         return True
 
+    def asCmdProvider(self):
+        return self._cmds
+
+    def asCmdInterpreter(self):
+        return self._compositors
+
     # Interpreter.filterCmd must called at end of Config chain, translate all
     # Command properties which like sources, libs, lib_dirs, include_dirs etc.
-    def filterCmd(self, cmd, kwargs):
+    def asCmdFilter(self, cmd, kwargs):
         if cmd.name not in ('ar', 'cc', 'cxx', 'ld'):
             return
 
@@ -45,7 +49,7 @@ class GCC:
         gcc -o hello main.c libhello.so
         '''
         if cmd.name == 'ar':
-            cmd.addPart(cmd.dst)  # .a must add first
+            cmd.addPart(cmd.dst)  # .a must insert before .o files
         else:
             cmd.parts += ['-o', cmd.dst]
 

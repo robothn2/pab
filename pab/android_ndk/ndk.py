@@ -93,7 +93,7 @@ class NDK:
                 suffix=request.hostOS.getExecutableSuffix())
         return True, [clang]
 
-    def filterCmd(self, cmd, kwargs):
+    def asCmdFilter(self, cmd, kwargs):
         if cmd.name == 'cc' or cmd.name == 'cxx':
             cmd.defines += ['__ANDROID__', 'ANDROID', '__ELF__']
             cmd.sysroots += [self.sysroot, os.path.join(self.root, 'sysroot')]

@@ -6,10 +6,9 @@ class BinUtils:
         self.name = 'BinUtils'
         self.kwargs = kwargs
         self.suffix = kwargs.get('suffix', '')
-
-        self.cmds = {
+        self._cmds = {
                 'file': ('file' + self.suffix, ),  # C:\msys64\usr\bin
                 }
 
-    def queryCmd(self, cmd_name):
-        return self.cmds.get(cmd_name)
+    def asCmdProvider(self):
+        return self._cmds

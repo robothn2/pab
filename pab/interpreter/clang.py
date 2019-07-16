@@ -39,14 +39,14 @@ class Clang:
             self.prefix += os.sep
         self.target_triple = ''
 
-        self.cmds = {
+        self._cmds = {
                 'cc': (self.prefix + 'clang' + self.suffix, 'src', '-c', '-x', 'c'),
                 'cxx': (self.prefix + 'clang' + self.suffix, 'src', '-c', '-x', 'c++'),
                 'ar': (self.prefix + 'ar' + self.suffix, 'dst', '-rcs'),
                 'ld': (self.prefix + 'clang' + self.suffix, 'dst'),
                 #'ldd': (self.prefix + 'ld.bfd' + self.suffix, ),
                 }
-        self.compositors = {
+        self._compositors = {
                 'sysroot':      lambda path, args: f'--sysroot={path}',
                 'includePath':  lambda path, args: ['-I', path],
                 'libPath':      lambda path, args: ['-L', path],
@@ -58,10 +58,13 @@ class Clang:
         self.target_triple = request.target_cpu + '-' + request.target_os
         return True
 
-    def queryCmd(self, cmd_name):
-        return self.cmds.get(cmd_name)
+    def asCmdProvider(self):
+        return self._cmds
 
-    def filterCmd(self, cmd, kwargs):
+    def asCmdInterpreter(self):
+        return self._compositors
+
+    def asCmdFilter(self, cmd, kwargs):
         if cmd.name not in ('ar', 'cc', 'cxx', 'ld'):
             return
 

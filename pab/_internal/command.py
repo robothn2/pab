@@ -7,10 +7,7 @@ from .target_utils import ItemList
 from .log import logger
 '''
 A Command consists of multiple parts, each one includes many CommandPart which
-provided by a Plugin.
-A CommandPart can be a string for supportting special compiler, a tuple for
-supportting command composition, a lambda/function for supportting config
-specialization, and a list of string, a list of tuple.
+provided by Configs.
 '''
 
 _props_of_cmd = [
@@ -21,23 +18,33 @@ _props_of_cmd = [
 
 
 class Command(dict):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, interpreter, *extra_args, **kwargs):
         dict.__init__({})
-        self.executable = kwargs['executable']
         self.name = kwargs['name']
-        self.cmds = []
-        self.appendixs = []  # collect args which including `"`
-        self.dst = ''
+        self.interpreter = interpreter
         self.results = kwargs['results']
+
+        self.cmds = [kwargs['executable']]  # executable must be first element
+        for arg in extra_args:
+            self.addPart(arg)
+
+        self.appendixs = []  # collect args which including `"`
+        self['parts'] = ItemList(name='parts', unique=False)
         for v in _props_of_cmd:
             self[v] = ItemList(name=v)
-        self['parts'] = ItemList(name='parts', unique=False)
 
         for k, v in kwargs.items():
             if k in self:
                 self[k] += v
             else:
                 self[k] = v
+
+        self.sources += kwargs.pop('sources')
+        self.dst = kwargs.get('dst')
+        if self.dst:
+            kwargs.pop('dst')
+
+        self._preprocess(kwargs)
 
     def __getattr__(self, name):
         if name in self:
@@ -54,9 +61,38 @@ class Command(dict):
                     self[k] += other.k
         return self
 
-    def _composeSources(self, tmp_file_path):
+    def _preprocess(self, kwargs):
+        for cfg in kwargs.pop('configs', []):
+            if cfg == self.interpreter or not hasattr(cfg, 'asCmdFilter'):
+                continue
+            cfg.asCmdFilter(self, kwargs)
+
+        if hasattr(self.interpreter, 'asCmdFilter'):
+            self.interpreter.asCmdFilter(self, kwargs)
+
+        if hasattr(self.interpreter, 'asCmdInterpreter'):
+            self._translate(self.interpreter.asCmdInterpreter(), kwargs)
+        else:
+            self.parts += self.sources
+
+    def _translate(self, compositors, kwargs):
+        self._mergeSources(
+                os.path.join(kwargs['request'].rootBuild, 'src_list.txt'))
+
+        for prop in ('defines', 'sysroots', 'include_dirs', 'lib_dirs', 'libs'):
+            c = compositors.get(prop)
+            if not c:
+                continue
+            for v in self[prop]:
+                v_trans = c(v, kwargs)
+                logger.debug('- {} -> {}'.format(v, v_trans))
+                self.parts += v_trans
+
+        # 'ccflags', 'cxxflags', 'ldflags',
+        self.parts += self.get(self.name + 'flags')
+
+    def _mergeSources(self, tmp_file_path):
         # write all source file path into file, and use @file
-        # print('?', len(self.sources), isinstance(self.sources, ItemList))
         if len(self.sources) < 5:
             self.parts += self.sources
             return
@@ -71,47 +107,6 @@ class Command(dict):
             f.close()
         self.parts += '@' + tmp_file
 
-    def _translate(self, compositors, kwargs):
-        self._composeSources(
-                os.path.join(kwargs['request'].rootBuild, 'src_list.txt'))
-
-        for prop in ('defines', 'sysroots', 'include_dirs', 'lib_dirs', 'libs'):
-            c = compositors.get(prop)
-            if not c:
-                continue
-            for v in self[prop]:
-                self.parts += c(v, kwargs)
-
-        # 'ccflags', 'cxxflags', 'ldflags',
-        self.parts += self.get(self.name + 'flags')
-
-    def preprocess(self, interpreter, *extra_args, **kwargs):
-        self.appendixs = []
-        self.cmds = [self.executable]  # executable must be first element
-        # extra command args by provider
-        for arg in extra_args:
-            self.addPart(arg)
-
-        self.sources += kwargs.pop('sources')
-        self.dst = kwargs.get('dst')
-        for cfg in kwargs.pop('configs', []):
-            if cfg == interpreter or not hasattr(cfg, 'filterCmd'):
-                continue
-            cfg.filterCmd(self, kwargs)
-
-        if hasattr(interpreter, 'filterCmd'):
-            interpreter.filterCmd(self, kwargs)
-
-        if hasattr(interpreter, 'compositors'):
-            self._translate(interpreter.compositors, kwargs)
-        else:
-            self.parts += self.sources
-
-    def getCmdLine(self):
-        return subprocess.list2cmdline(self.cmds) \
-            + ' ' + ' '.join(self.parts) \
-            + ' ' + ' '.join(self.appendixs)
-
     def execute(self):
         # using appendixs to avoid incorrect quote on cmd part which existing
         #   double quote `"`
@@ -122,9 +117,15 @@ class Command(dict):
             return False, error
         return True, output
 
+    def getCmdLine(self):
+        return subprocess.list2cmdline(self.cmds) \
+            + ' ' + ' '.join(self.parts) \
+            + ' ' + ' '.join(self.appendixs)
+
     def addPart(self, part):
         if not part:
             return
+        assert(isinstance(part, str))
         if '"' in part:
             self.appendixs.append(part)
         else:

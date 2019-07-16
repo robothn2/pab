@@ -24,8 +24,6 @@ class Target:
         self.rootSource = base
         self.artifact = None
 
-        # todo: relative path rebase: sources, include_dirs, lib_dirs, libs
-
     def isSharedLib(self):
         return self.type == 'sharedLib'
 
@@ -38,14 +36,31 @@ class Target:
     def getDepends(self):
         return self.setting.deps
 
-    def filterCmd(self, cmd, kwargs):
-        if cmd.name not in ('cc', 'cxx'):
-            return
+    def _rebase(self, paths):
+        ret = []
+        for p in paths:
+            if os.path.isabs(p):
+                ret.append(p)
+            else:
+                p_final = os.path.realpath(os.path.join(self.rootSource, p))
+                ret.append(p_final)
+        return ret
 
-        if self.std.startswith('c++'):
+    def asCmdFilter(self, cmd, kwargs):
+        if cmd.name == 'cxx':
             cmd.cxxflags += '-std=' + self.std
-        else:
+            cmd.cxxflags += self.setting.cxxflags
+            cmd.include_dirs += self._rebase(self.setting.include_dirs)
+        elif cmd.name == 'cc':
             cmd.ccflags += '-std=' + self.std
+            cmd.ccflags += self.setting.ccflags
+            cmd.include_dirs += self._rebase(self.setting.include_dirs)
+        elif cmd.name == 'ld':
+            cmd.ldflags += self.setting.ldflags
+            cmd.lib_dirs += self._rebase(self.setting.lib_dirs)
+            cmd.libs += self.setting.libs
+        elif cmd.name == 'ar':
+            pass
 
     def build(self, builder, **kwargs):
         logger.info('== Target: {}, type: {}, base: {}'.format(

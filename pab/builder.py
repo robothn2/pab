@@ -36,17 +36,18 @@ class Builder:
                     if isinstance(r[1], list):
                         cfg_queue += r[1]
                 else:
-                    logger.info('disabled config: {} {}'.format(
+                    logger.info('Disabled config: {} {}'.format(
                             cfg.name, r[1]))
 
         self.configs.append(self.binutils)
 
         for cfg in self.configs:
-            if hasattr(cfg, 'cmds'):
+            if hasattr(cfg, 'asCmdProvider'):
                 self.interpreters.append(cfg)
-                logger.info('interpreter: ' + cfg.name)
-        logger.info('enabled config: {}'.format(
+        logger.info('Enabled configs: {}'.format(
                 [cfg.name for cfg in self.configs]))
+        logger.info('Interpreters: {}'.format(
+                [cfg.name for cfg in self.interpreters]))
 
     def build(self, targets, **kwargs):
         self._collect_available_configs()
@@ -63,15 +64,9 @@ class Builder:
         if not cmd_name:
             return (False, None)
 
-        cmd_entry, interpreter = self._find_cmd_entry(cmd_name)
-        assert(isinstance(cmd_entry, tuple))
-        cmd = Command(name=cmd_name, executable=cmd_entry[0],
-                      results=self.results)
-
-        cmd.preprocess(interpreter,
-                       *cmd_entry[1:],  # extra args from command provider
-                       request=self.request, configs=self.configs,
-                       **kwargs)
+        cmd = self._createCmd(cmd_name,
+                              results=self.results, request=self.request,
+                              configs=self.configs, **kwargs)
 
         logger.info('= {} {}'.format(cmd.name,
                     cmd.dst or cmd.sources[0]))
@@ -80,11 +75,12 @@ class Builder:
             return True, 'dryrun ok'
         return cmd.execute()
 
-    def _find_cmd_entry(self, cmd_name):
-        for cfg in self.interpreters:
-            if not hasattr(cfg, 'cmds'):
+    def _createCmd(self, cmd_name, **kwargs):
+        for interpreter in self.interpreters:
+            entry = interpreter.asCmdProvider().get(cmd_name)
+            if not entry:
                 continue
-            entry = cfg.cmds.get(cmd_name)
-            if entry:
-                return entry, cfg
-        return None, None
+            return Command(interpreter,
+                           *entry[1:],  # extra args from command provider
+                           name=cmd_name, executable=entry[0],
+                           **kwargs)

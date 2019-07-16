@@ -103,7 +103,7 @@ class PabTargets:
 
             self.completedTargets[target.uri] = target
 
-    def filterCmd(self, cmd, kwargs):
+    def asCmdFilter(self, cmd, kwargs):
         # add command parts for target's deps
         # todo: support merge configs
         # todo: support ccflags, cxxflags, ldflags, etc for cc/cxx
@@ -123,7 +123,6 @@ class PabTargets:
             # provide deps.artifact for link
             for dep_name in target.getDepends():
                 dep = self.completedTargets.get(dep_name)
-                print('?', dep.artifact)
                 if not dep or not dep.artifact:
                     continue
                 if dep.isSharedLib():
