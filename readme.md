@@ -4,19 +4,19 @@
 * support Target OS：Windows(7+), Linux(Ubuntu 18.04), MacOSX(10.13+), iOS, Android
 
 # Usage
-`from pab.builder import Builder
-from pab.request import Request
-from pab.targets.pab_folder import PabTargets
-from pab.android_ndk.ndk import NDK
+    from pab.builder import Builder
+    from pab.request import Request
+    from pab.targets.pab_folder import PabTargets
+    from pab.android_ndk.ndk import NDK
 
-compiler = NDK(path='d:/lib/android-ndk-r14b', platform=9, compiler='gcc')
-request = Request(target_os='android', target_cpu='armv7a',
-                  stl='llvm-libc++',
-                  root_build='D:/lib/build')
-target = PabTargets(root='test/hello')
-builder = Builder(request, compiler)
-builder.build(target)
-`
+    compiler = NDK(path='~/lib/android-ndk-r14b', platform=9, compiler='gcc')
+    request = Request(target_os='android', target_cpu='armv7a',
+                      stl='llvm-libc++',
+                      root_build='~/lib/build')
+    target = PabTargets(root='test/hello')
+    builder = Builder(request, compiler)
+    builder.build(target)
+
 
 # BuildFlow
 * Compiler: NDK gcc/llvm, VisualC, IntelC, LLVM8.0
@@ -34,10 +34,8 @@ builder.build(target)
 * target script: support check_header, check_function
 * target script: support export_header, gen_header
 * support tracing source & history on variable
-* suggestion on fails:
-*   header not found: search header file in system
-*   macro not found:
-*   unresolved referenced function: link to which lib
+* suggestion on fails: header not found: search header file in system
+* suggestion on fails: unresolve referenced function: link to which lib
 * interactive build mode: pause build flow, can resume it too
 * parellel build mode: as possible as soon, exit on fails, cannot resume
 * generate ninja build script

@@ -32,8 +32,13 @@ class GCC:
     def asCmdInterpreter(self):
         return self._compositors
 
-    # Interpreter.filterCmd must called at end of Config chain, translate all
-    # Command properties which like sources, libs, lib_dirs, include_dirs etc.
+    '''
+    Interpreter.filterCmd must called at end of Config chain, translate all
+    Command properties which like sources, libs, lib_dirs, include_dirs etc.
+    rule:
+        sources - translate by Command._mergeSources
+        dst - translate by interpreter.asCmdFilter
+    '''
     def asCmdFilter(self, cmd, kwargs):
         if cmd.name not in ('ar', 'cc', 'cxx', 'ld'):
             return

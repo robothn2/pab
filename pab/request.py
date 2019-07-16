@@ -26,7 +26,7 @@ class Request:
         logger.info('OSTags: {}'.format(self.kwargs['target_os_tags']))
 
     def hasMember(self, memberName):
-        return memberName in self.cfg
+        return memberName in self.kwargs
 
     def __getattr__(self, name):
         return self.kwargs.get(name)

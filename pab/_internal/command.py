@@ -42,8 +42,6 @@ class Command(dict):
 
         self.sources += kwargs.pop('sources')
         self.dst = kwargs.get('dst')
-        if self.dst:
-            kwargs.pop('dst')
 
         self._preprocess(kwargs)
 
