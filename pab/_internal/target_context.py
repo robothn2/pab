@@ -2,13 +2,14 @@
 from .target_utils import ItemList
 from .header_file import HeaderFileReader
 
+
 class TargetContext(dict):
     def __init__(self, *args, **kwargs):
         dict.__init__({})
         self['options'] = {}
         vars_normal = ['defines', 'public_include_dirs', 'include_dirs',
                        'headers', 'sysroots', 'ccflags', 'cxxflags', 'ldflags',
-                       'lib_dirs', 'libs', 'deps',
+                       'lib_dirs', 'libs', 'deps', 'configs',
                        ]
         vars_pattern = ['public_headers', 'sources']  # support pattern add/sub
         for v in vars_normal:

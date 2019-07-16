@@ -1,14 +1,15 @@
 # coding: utf-8
+'''
+A Command consists of multiple parts, each one includes many CommandPart which
+provided by Configs.
+'''
 
 import subprocess
 import os
 from .output_analyze import output_analyze
 from .target_utils import ItemList
+from .target import Target
 from .log import logger
-'''
-A Command consists of multiple parts, each one includes many CommandPart which
-provided by Configs.
-'''
 
 _props_of_cmd = [
         'defines', 'include_dirs', 'sysroots', 'sources',
@@ -54,11 +55,12 @@ class Command(dict):
     def __iadd__(self, other):
         if not other:
             return self
-        if isinstance(other, object):
-            # merge other into self
-            for k in _props_of_cmd:
-                if hasattr(other, k):
-                    self[k] += other.k
+        assert(isinstance(other, Target))
+        # merge other into self
+        logger.debug('- merge Config(%s) into Command' % str(other))
+        for k in _props_of_cmd:
+            if hasattr(other, k):
+                self[k] += other.k
         return self
 
     def _preprocess(self, kwargs):

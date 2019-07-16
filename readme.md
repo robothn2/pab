@@ -1,10 +1,10 @@
 # Description
-pab(python auto build) is a extendable build engine, for simply build open source projects: ffmpeg, skia, ogre
-support Host OS：Windows(10), Linux(Ubuntu 18.04), MacOSX(10.13+)
-support Target OS：Windows(7+), Linux(Ubuntu 18.04), MacOSX(10.13+), iOS, Android
+* pab(python auto build) is a extendable build engine, for simply build open source projects: ffmpeg, skia, ogre
+* support Host OS：Windows(10), Linux(Ubuntu 18.04), MacOSX(10.13+)
+* support Target OS：Windows(7+), Linux(Ubuntu 18.04), MacOSX(10.13+), iOS, Android
 
 # Usage
-from pab.builder import Builder
+`from pab.builder import Builder
 from pab.request import Request
 from pab.targets.pab_folder import PabTargets
 from pab.android_ndk.ndk import NDK
@@ -16,6 +16,7 @@ request = Request(target_os='android', target_cpu='armv7a',
 target = PabTargets(root='test/hello')
 builder = Builder(request, compiler)
 builder.build(target)
+`
 
 # BuildFlow
 * Compiler: NDK gcc/llvm, VisualC, IntelC, LLVM8.0
@@ -26,13 +27,13 @@ builder.build(target)
 * Install: generate SDK, Framework, APP
 
 # Features
-* define Targets in python script, support dependencies
+* target script: define Targets in python script, support dependencies
 * link many .o files by using @FILE
 
 # Todo
-* 定义文件: 支持环境检测: check_header, check_function
-* 定义文件: 支持生成头文件: export_header, gen_header
-* 显示变量的来源和变化历史
+* target script: support check_header, check_function
+* target script: support export_header, gen_header
+* support tracing source & history on variable
 * suggestion on fails:
 *   header not found: search header file in system
 *   macro not found:

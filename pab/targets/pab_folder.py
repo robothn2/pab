@@ -62,11 +62,11 @@ class PabTargets:
                 if not result:
                     continue
 
-                logger.info(f'round {round_cnt}: {uri} all resolved')
+                logger.debug(f'round {round_cnt}: {uri} all resolved')
                 entry[0] = False  # all deps & configs resolved
                 entry[1] = max(level_deps, level_cfgs) + 1
             if not found_pending:
-                logger.info(f'round {round_cnt}: no more pending')
+                logger.debug(f'round {round_cnt}: no more pending')
                 break  # no more
             round_cnt += 1
 
@@ -105,11 +105,15 @@ class PabTargets:
 
     def asCmdFilter(self, cmd, kwargs):
         # add command parts for target's deps
-        # todo: support merge configs
-        # todo: support ccflags, cxxflags, ldflags, etc for cc/cxx
         target = kwargs.get('target')
         if not target or not target.isArtifact():
             return
+
+        for cfg_name in target.getConfigs():
+            cfg = self.completedTargets.get(cfg_name)
+            if not cfg:
+                continue
+            cmd += cfg
 
         if cmd.name == 'cc' or cmd.name == 'cxx':
             # provide deps.public_include_dirs for cc/cxx
@@ -117,7 +121,8 @@ class PabTargets:
                 dep = self.completedTargets.get(dep_name)
                 if not dep:
                     continue
-                cmd.include_dirs += dep.setting.public_include_dirs
+                cmd.include_dirs += dep.rebasePath(
+                        dep.setting.public_include_dirs)
 
         elif cmd.name == 'ld':
             # provide deps.artifact for link
@@ -128,5 +133,5 @@ class PabTargets:
                 if dep.isSharedLib():
                     cmd.sources += dep.artifact
                 elif dep.isStaticLib():
-                    cmd.lib_dirs += os.path.dirname(dep.artifact)
-                    cmd.libs += dep.name
+                    # cmd.lib_dirs += os.path.dirname(dep.artifact)
+                    cmd.libs += dep.artifact

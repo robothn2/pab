@@ -68,8 +68,7 @@ class Builder:
                               results=self.results, request=self.request,
                               configs=self.configs, **kwargs)
 
-        logger.info('= {} {}'.format(cmd.name,
-                    cmd.dst or cmd.sources[0]))
+        print('=', cmd.name, cmd.dst or cmd.sources[0])
         logger.info('cmdline: ' + cmd.getCmdLine())
         if kwargs.get('dryrun', False):
             return True, 'dryrun ok'

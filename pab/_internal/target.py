@@ -10,19 +10,28 @@ from .log import logger
 
 class Target:
     def __init__(self, tar, request, *deps, **kwargs):
-        base = tar[0].get('source_base_dir')
+        if isinstance(tar, tuple):
+            init_setting = tar[0]
+            self.dyn_setting = tar[1]
+        else:
+            init_setting = tar
+            self.dyn_setting = None
+        base = init_setting.get('source_base_dir')
         if not os.path.isabs(base):
             base = os.path.realpath(os.path.join(kwargs['root'], base))
-            tar[0]['source_base_dir'] = base
-        self.dyn_setting = tar[1]
+            init_setting['source_base_dir'] = base
+
         self.request = request
-        self.setting = TargetContext(**tar[0], **request.kwargs)
+        self.setting = TargetContext(**init_setting, **request.kwargs)
         self.uri = self.setting['uri']
         self.type = self.setting.get('type', 'staticLib')
         self.name = re.split(r'[./\\]', self.uri)[-1]
         self.std = self.setting.get('std', 'c++11')  # c99, c11, c++11, c++17
         self.rootSource = base
         self.artifact = None
+
+    def __str__(self):
+        return self.uri
 
     def isSharedLib(self):
         return self.type == 'sharedLib'
@@ -36,7 +45,10 @@ class Target:
     def getDepends(self):
         return self.setting.deps
 
-    def _rebase(self, paths):
+    def getConfigs(self):
+        return self.setting.configs
+
+    def rebasePath(self, paths):
         ret = []
         for p in paths:
             if os.path.isabs(p):
@@ -50,14 +62,14 @@ class Target:
         if cmd.name == 'cxx':
             cmd.cxxflags += '-std=' + self.std
             cmd.cxxflags += self.setting.cxxflags
-            cmd.include_dirs += self._rebase(self.setting.include_dirs)
+            cmd.include_dirs += self.rebasePath(self.setting.include_dirs)
         elif cmd.name == 'cc':
             cmd.ccflags += '-std=' + self.std
             cmd.ccflags += self.setting.ccflags
-            cmd.include_dirs += self._rebase(self.setting.include_dirs)
+            cmd.include_dirs += self.rebasePath(self.setting.include_dirs)
         elif cmd.name == 'ld':
             cmd.ldflags += self.setting.ldflags
-            cmd.lib_dirs += self._rebase(self.setting.lib_dirs)
+            cmd.lib_dirs += self.rebasePath(self.setting.lib_dirs)
             cmd.libs += self.setting.libs
         elif cmd.name == 'ar':
             pass
