@@ -1,6 +1,7 @@
 #include <stdio.h>
+#include "hello.h"
 
-void pr()
+HELLO_API void hello()
 {
 	printf("hello world");
 }

@@ -48,7 +48,8 @@ class GCC:
         gcc -c hello.c
         # link to static lib
         ar -rcs libhello.a hello.o
-        gcc -o hello_static main.c -L. -lhello
+        gcc -o hello_static main.c -L. -lhello  # or next line:
+        gcc -o hello_static main.c libhello.a
         # link to dynamic lib
         gcc -shared -fpic -o libhello.so hello.o
         gcc -o hello main.c libhello.so

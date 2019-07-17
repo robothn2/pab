@@ -35,6 +35,7 @@ class Command(dict):
         self.retcode = 0
         self.output = ''
         self.error = ''
+        self.artifacts = []
 
         self._front_cmds = [kwargs['executable']]  # executable must be first element
         for arg in extra_args:
@@ -68,12 +69,12 @@ class Command(dict):
             return self
         if isinstance(other, Target):
             # merge Config into Command
-            logger.debug('- merge Config(%s) into Command' % str(other))
+            # logger.debug('- merge Config(%s) into Command' % str(other))
             for k in _cmd_affected_props.get(self.name, ()):
                 prop_target = other.setting.get(k)
                 self[k] += prop_target
-                if prop_target:
-                    logger.debug('   {}: {} -> {}'.format(k, prop_target, self[k]))
+                #if prop_target:
+                #    logger.debug('   {}: {} -> {}'.format(k, prop_target, self[k]))
         elif isinstance(other, list):
             for item in other:
                 assert(isinstance(item, str))
@@ -138,6 +139,7 @@ class Command(dict):
             self.success = False
         else:
             self.success = True
+            self.artifacts.append(self.dst)
         return self.success
 
     def getCmdLine(self):

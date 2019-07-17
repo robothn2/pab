@@ -1,7 +1,7 @@
-extern void pr();
+#include "hello.h"
 
 int main()
 {
-	pr();
+	hello();
 	return 0;
 }

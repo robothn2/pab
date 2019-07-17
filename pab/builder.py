@@ -67,6 +67,7 @@ class Builder:
         if not cmd:
             print('* fail to create command:', cmd_name, kwargs['sources'])
             return
+        logger.debug('cmdline: ' + cmd.getCmdLine())
         if kwargs.get('dryrun', False):
             return
         cmd.execute()

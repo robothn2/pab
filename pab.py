@@ -31,6 +31,6 @@ if __name__ == '__main__':
     request = Request(target_os='win', target_cpu='x86',
                       root_build='D:/lib/build')
 
-    target = PabTargets(root='test/lyra')
+    target = PabTargets(root='test/hello')
     builder = Builder(request, compiler)
     builder.build(target, dryrun=False)

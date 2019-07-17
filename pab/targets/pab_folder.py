@@ -131,8 +131,4 @@ class PabTargets:
                 dep = self.completedTargets.get(dep_name)
                 if not dep or not dep.artifact:
                     continue
-                if dep.isSharedLib():
-                    cmd.sources += dep.artifact
-                elif dep.isStaticLib():
-                    # cmd.lib_dirs += os.path.dirname(dep.artifact)
-                    cmd.libs += dep.artifact
+                cmd.sources += dep.artifact

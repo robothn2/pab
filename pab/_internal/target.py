@@ -77,7 +77,7 @@ class Target:
         # logger.debug('Setting init: ' + str(self.setting))
         if self.dyn_setting:
             self.dyn_setting(self.setting, self.setting)
-        logger.debug('Setting apply: ' + str(self.setting))
+        # logger.debug('Setting apply: ' + str(self.setting))
 
         if not self.isArtifact():
             return
@@ -119,8 +119,6 @@ class Target:
             if not cmd:
                 continue
 
-            logger.debug('cmdline: ' + cmd.getCmdLine())
-
             if cmd.success:
                 builder.results.succeeded(file)
                 self.objs += dst
@@ -145,7 +143,7 @@ class Target:
             builder.results.error(file, cmd.error)
             return
 
-        self.artifact = executable
+        self.artifact = cmd.artifacts[0]
         builder.results.succeeded(self.artifact)
         cmd = builder.execCommand('file', sources=self.artifact)
         logger.info(cmd.output)
