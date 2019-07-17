@@ -4,14 +4,15 @@ lib_zziplib = {
     'uri': 'zziplib',
     'source_base_dir': 'd:/lib/ogredeps/src/zziplib/zzip',
     'type': 'staticLib',
-    'std': 'c11',
     'public_include_dirs': [],
     'include_dirs': [
         '..',
         '../../src/zlib',
         ],
     'defines': [],
-    'ccflags': [],
+    'ccflags': [
+        '-std=c11',
+        ],
     'cxxflags': [],
     'deps': [],
     'libs': ['c', 'z'],
@@ -58,13 +59,12 @@ lib_freetype = {
     'uri': 'freetype',
     'source_base_dir': 'd:/lib/ogredeps/src/freetype',
     'type': 'staticLib',
-    'std': 'c11',
     'include_dirs': [
         'include',
-    ],
+        ],
     'defines': [
         'FT2_BUILD_LIBRARY',
-    ],
+        ],
     'ccflags': [],
     'cxxflags': [],
     'deps': [],
@@ -123,7 +123,7 @@ lib_freetype = {
         'include/freetype/tttables.h',
         'include/freetype/tttags.h',
         'include/freetype/ttunpat.h',
-    ],
+        ],
     'sources': [
         'src/autofit/autofit.c',
         'src/base/ftbase.c',
@@ -159,7 +159,7 @@ lib_freetype = {
         'src/type1/type1.c',
         'src/type42/type42.c',
         'src/winfonts/winfnt.c',
-    ],
+        ],
 }
 
 

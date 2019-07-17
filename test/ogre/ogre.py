@@ -3,7 +3,9 @@
 lib_common = {
     'uri': 'common',
     'type': 'config',
-    'std': 'c++11',
+    'cxxflags': [
+        '-std=c++11',
+        ],
     'source_base_dir': 'd:/lib/ogre',
     'install_dirs_map': {
         },
@@ -197,23 +199,21 @@ lib_OgreMain = {
     'uri': 'OgreMain',
     'source_base_dir': 'd:/lib/ogre/OgreMain',
     'type': 'staticLib',
-    'std': 'c++11',
     'options': {
         'OGRE_CONFIG_ENABLE_DDS': True,
         'OGRE_CONFIG_ENABLE_PVRTC': True,
         'OGRE_CONFIG_ENABLE_ETC': True,
         'OGRE_CONFIG_ENABLE_ASTC': True,
         'OGRE_CONFIG_ENABLE_ZIP': True,
-    },
+        },
     'public_include_dirs': [],
     'include_dirs': [
         'include',
         'include/Threading',
         'src',
-    ],
+        ],
     'defines': [],
     'ccflags': [],
-    'cxxflags': [],
     'libs': [],
 
     'configs': [

@@ -67,12 +67,12 @@ class Builder:
         cmd = self._createCmd(cmd_name,
                               results=self.results, request=self.request,
                               configs=self.configs, **kwargs)
-
         print('=', cmd.name, cmd.dst or cmd.sources[0])
-        logger.info('cmdline: ' + cmd.getCmdLine())
+        logger.debug('cmdline: ' + cmd.getCmdLine())
         if kwargs.get('dryrun', False):
             return True, 'dryrun ok'
-        return cmd.execute()
+        cmd.execute()
+        return cmd
 
     def _createCmd(self, cmd_name, **kwargs):
         for interpreter in self.interpreters:

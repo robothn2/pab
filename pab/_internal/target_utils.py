@@ -48,7 +48,7 @@ class ItemList(list):
 
             if _str_find_first_of(s, '*?['):
                 # wildcard match under folder: self.base
-                for f in glob.iglob(self.base + os.sep + s):
+                for f in glob.iglob(self.base + os.sep + s, recursive=True):
                     path = os.path.relpath(f, self.base).replace('\\', '/')
                     self._append_str(path)
                 return

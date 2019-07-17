@@ -26,7 +26,6 @@ class Target:
         self.uri = self.setting['uri']
         self.type = self.setting.get('type', 'staticLib')
         self.name = re.split(r'[./\\]', self.uri)[-1]
-        self.std = self.setting.get('std', 'c++11')  # c99, c11, c++11, c++17
         self.rootSource = base
         self.artifact = None
 
@@ -60,11 +59,9 @@ class Target:
 
     def asCmdFilter(self, cmd, kwargs):
         if cmd.name == 'cxx':
-            cmd.cxxflags += '-std=' + self.std
             cmd.cxxflags += self.setting.cxxflags
             cmd.include_dirs += self.rebasePath(self.setting.include_dirs)
         elif cmd.name == 'cc':
-            cmd.ccflags += '-std=' + self.std
             cmd.ccflags += self.setting.ccflags
             cmd.include_dirs += self.rebasePath(self.setting.include_dirs)
         elif cmd.name == 'ld':
@@ -110,17 +107,14 @@ class Target:
                 continue
 
             dst = os.path.join(self.request.rootBuild, file) + '.o'
-            result, output = builder.execCommand(
+            cmd = builder.execCommand(
                         detected.cmd, sources=src, dst=dst,
                         target=self, **kwargs)
-            if result:
+            if cmd.success:
                 builder.results.succeeded(file)
                 objs.append(dst)
-
-                # result = builder.execCommand('file', sources=dst)
-                # print(result[1])
             else:
-                builder.results.error(file, output)
+                builder.results.error(file, cmd.error)
 
         if len(objs) == 0:
             return
@@ -132,17 +126,17 @@ class Target:
         if not os.path.exists(dstfolder):
             os.makedirs(dstfolder)
 
-        result, reason = builder.execCommand(
-            'ar' if self.isStaticLib() else 'ld',
-            sources=objs, dst=executable, target=self, **kwargs)
-        if not result:
-            builder.results.error(file, reason)
+        cmd = builder.execCommand(
+                'ar' if self.isStaticLib() else 'ld',
+                sources=objs, dst=executable, target=self, **kwargs)
+        if not cmd.success:
+            builder.results.error(file, cmd.error)
             return
 
         self.artifact = executable
         builder.results.succeeded(self.artifact)
-        result, output = builder.execCommand('file', sources=self.artifact)
-        logger.info(output)
+        cmd = builder.execCommand('file', sources=self.artifact)
+        logger.info(cmd.output)
 
         # copy public headers to $BUILD
         for header_file in self.setting.public_headers:

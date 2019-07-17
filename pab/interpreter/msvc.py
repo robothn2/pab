@@ -1,7 +1,51 @@
 # coding: utf-8
-
 import os
 import re
+from pab._internal.target_utils import ItemList
+
+
+class WinSDK:
+    def __init__(self, ver, **kwargs):
+        self.include_dirs = ItemList(name='include_dirs')
+        self.lib_dirs = {'x86': ItemList(name='x86'), 'x64': ItemList(name='x64')}
+        self.static_libs = {'x86': ItemList(name='x86'), 'x64': ItemList(name='x64')}
+        self.shared_libs = {'x86': ItemList(name='x86'), 'x64': ItemList(name='x64')}
+
+        if not ver or ver == '8.1':
+            root = r'C:\Program Files (x86)\Windows Kits\8.1\Include'
+            self.include_dirs += os.path.join(root, 'include')
+            self.include_dirs += [
+                    os.path.join(root, 'um'),
+                    os.path.join(root, 'shared'),
+                    ]
+
+            root = r'C:\Program Files (x86)\Windows Kits\8.1\Lib\winv6.3'
+            self.lib_dirs['x86'] += os.path.join(root, r'um\x86')
+            self.lib_dirs['x64'] += os.path.join(root, r'um\x64')
+
+        elif ver == '7.1':
+            root = r'C:\Program Files (x86)\Microsoft SDKs\Windows\v7.1A'
+            self.include_dirs += os.path.join(root, 'include')
+            self.lib_dirs['x86'] += os.path.join(root, 'lib')
+            self.lib_dirs['x64'] += os.path.join(root, r'lib\x64')
+
+        elif re.match(r'10\.\d+\.\d+\.\d+', ver):
+            root = fr'C:\Program Files (x86)\Windows Kits\10\Include\{ver}'
+            self.include_dirs += [
+                    os.path.join(root, 'ucrt'),
+                    os.path.join(root, 'um'),
+                    os.path.join(root, 'shared'),
+                    ]
+
+            root = fr'C:\Program Files (x86)\Windows Kits\10\Lib\{ver}'
+            self.lib_dirs['x86'] += [
+                    os.path.join(root, r'ucrt\x86'),
+                    os.path.join(root, r'um\x86'),
+                    ]
+            self.lib_dirs['x64'] += [
+                    os.path.join(root, r'ucrt\x64'),
+                    os.path.join(root, r'um\x64'),
+                    ]
 
 
 class MSVC:
@@ -16,13 +60,9 @@ class MSVC:
 
         self._cmds = {
                 'cc':   (os.path.join(self.root, r'vc\bin\cl.exe'),
-                         '/TC', '/nologo', '/c',
-                         '/D', 'WIN32', '/D', '_WINDOWS',
-                         '/D', '_UNICODE', '/D', 'UNICODE'),
+                         '/TC', '/nologo', '/c'),
                 'cxx':  (os.path.join(self.root, r'vc\bin\cl.exe'),
-                         '/TP', '/nologo', '/c',
-                         '/D', 'WIN32', '/D', '_WINDOWS',
-                         '/D', '_UNICODE', '/D', 'UNICODE'),
+                         '/TP', '/nologo', '/c'),
                 'ar':   (os.path.join(self.root, r'vc\bin\lib.exe'), ),
                 'ld':   (os.path.join(self.root, r'vc\bin\link.exe'),
                          '/nologo',),
@@ -32,8 +72,10 @@ class MSVC:
                 'include_dirs':  lambda path, args: f'/I"{path}"',
                 'lib_dirs':      lambda path, args: f'/LIBPATH:"{path}"',
                 'libs':          lambda path, args: path,
-                'defines':       lambda macro, args: f'-D{macro}',
+                'defines':       lambda macro, args: f'/D "{macro}"',
                 }
+
+        self.sdk = WinSDK(kwargs.get('target_platform_ver'))
 
     def __str__(self):
         return self.name
@@ -49,6 +91,8 @@ class MSVC:
 
     def asCmdFilter(self, cmd, kwargs):
         if cmd.name == 'cxx' or cmd.name == 'cc':
+            cmd.defines += ['WIN32', '_WINDOWS',
+                            '_UNICODE', 'UNICODE']
             flags = cmd.get(cmd.name + 'flags')
             flags += ['/Gm-',  # disable minimalest rebuild
                       '/GS',   # 启用安全检查，检测堆栈缓冲区溢出
@@ -80,29 +124,11 @@ class MSVC:
             dst = kwargs['dst']
             cmd.addPart(f'/Fo:"{dst}"')
 
-            # include path:
-            #   stdio.h
-            #       C:\Program Files (x86)\Windows Kits\10\Include\10.0.17763.0\ucrt
-            #       C:\Program Files (x86)\Windows Kits\10\Include\10.0.10150.0\ucrt
-            #       C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\include
-            #       C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\include
-            #       C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include
-            #       C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include
-            #   string, vector, map, cstdio, iostream, sstream, ciso646
-            #       C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\include
-            #       C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\include
-            #   ctype.h, corecrt.h
-            #       C:\Program Files (x86)\Windows Kits\10\Include\10.0.17134.0\ucrt
-            #       C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\include
-            #   winnt.h, winsock2.h,
-            #       C:\Program Files (x86)\Microsoft SDKs\Windows\v7.1A\Include
-            #       C:\Program Files (x86)\Windows Kits\8.1\Include\um
-            #       C:\Program Files (x86)\Windows Kits\10\Include\10.0.17134.0\um
-            #   commdlg.h, d3d.h, d3d11.h, objbase.h, commctrl.h,
-            #       C:\Program Files (x86)\Microsoft SDKs\Windows\v7.1A\Include
-            #       C:\Program Files (x86)\Windows Kits\8.1\Include\um
-            #       C:\Program Files (x86)\Windows Kits\10\Include\10.0.10150.0\ucrt
-            cmd.include_dirs += os.path.join(self.root, r'VC\include')
+            cmd.include_dirs += [
+                    os.path.join(self.root, r'VC\include'),
+                    os.path.join(self.root, r'VC\atlmfc\include'),
+                    ]
+            cmd.include_dirs += self.sdk.include_dirs
 
         elif cmd.name == 'ar':
             pass
@@ -116,7 +142,6 @@ class MSVC:
                     '/LARGEADDRESSAWARE',
                     '/DYNAMICBASE', '/NXCOMPAT', '/SAFESEH',
                     ]
-            cmd.lib_dirs += os.path.join(self.root, r'VC\lib')
             cmd.libs += [
                     'kernel32.lib', 'user32.lib', 'gdi32.lib', 'advapi32.lib',
                     'shell32.lib', 'ole32.lib', 'oleaut32.lib', 'shell32.lib',
@@ -128,47 +153,22 @@ class MSVC:
 
             if kwargs.get('x64'):
                 cmd.ldflags += '/MACHINE:X64'
+                cmd.lib_dirs += [
+                        os.path.join(self.root, r'VC\lib\amd64'),
+                        os.path.join(self.root, r'VC\atlmfc\lib\amd64'),
+                        ]
+                cmd.lib_dirs += self.sdk.lib_dirs['x64']
             else:
                 cmd.ldflags += '/MACHINE:X86'
+                cmd.lib_dirs += [
+                        os.path.join(self.root, r'VC\lib'),
+                        os.path.join(self.root, r'VC\atlmfc\lib'),
+                        ]
+                cmd.lib_dirs += self.sdk.lib_dirs['x86']
 
             if kwargs['target'].isSharedLib():
                 cmd.ldflags += '/DLL'
             # '/MANIFEST', '''/MANIFESTUAC:"level='asInvoker' uiAccess='false'"''', '/manifest:embed',
             # '/DEBUG', '/Zi', '/PDB:"target.pdb"',
-            # '/IMPLIB:"../../build/Publish2015/EngineWorker.lib"',
+            # '/IMPLIB:"../../build/Release/MyProject.lib"',
 
-        target_platform_ver = self.kwargs.get('target_platform_ver', '10.0.14493.0')
-        if target_platform_ver == '7.1':
-            if cmd.name == 'ld':
-                cmd.lib_dirs += r'C:\Program Files (x86)\Microsoft SDKs\Windows\v7.1A\Lib'
-            elif cmd.name in ['cc', 'cxx']:
-                cmd.include_dirs += r'C:\Program Files (x86)\Microsoft SDKs\Windows\v7.1A\Include'
-
-        elif re.match(r'10\.\d+\.\d+\.\d+', target_platform_ver):
-            # default windows kits: 10.0.xxxxx.0
-            if cmd.name == 'ld':
-                cmd.lib_dirs += [
-                        fr'C:\Program Files (x86)\Windows Kits\10\Lib\{target_platform_ver}\ucrt\x86',
-                        fr'C:\Program Files (x86)\Windows Kits\10\Lib\{target_platform_ver}\um\x86',
-                        ]
-            elif cmd.name in ['cc', 'cxx']:
-                cmd.include_dirs += [
-                        fr'C:\Program Files (x86)\Windows Kits\10\Include\{target_platform_ver}\ucrt',
-                        fr'C:\Program Files (x86)\Windows Kits\10\Include\{target_platform_ver}\um',
-                        fr'C:\Program Files (x86)\Windows Kits\10\Include\{target_platform_ver}\shared',
-                        ]
-
-        else:
-            # default windows sdk: 8.1
-            if cmd.name == 'ld':
-                cmd.lib_dirs += [
-                        r'C:\Program Files (x86)\Windows Kits\8.1\Lib\winv6.3\um\x86',  # only 'um' exist
-                        r'C:\Program Files (x86)\Microsoft SDKs\Windows\v7.1A\Lib',
-                        ]
-            elif cmd.name in ['cc', 'cxx']:
-                cmd.include_dirs += [
-                        r'C:\Program Files (x86)\Windows Kits\8.1\Include\um',
-                        r'C:\Program Files (x86)\Windows Kits\8.1\Include\shared',
-                        r'C:\Program Files (x86)\Microsoft SDKs\Windows\v7.1A\Include',
-                        ]
-            # '/D', '_USING_V110_SDK71_',

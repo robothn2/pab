@@ -4,13 +4,15 @@ lib = {
     'uri': 'jsoncpp',
     'source_base_dir': r'D:\src\frameflow\third_party\repo\jsoncpp',
     'type': 'sharedLib',
-    'std': 'c++11',
     'install_dirs_map': {
         'include': 'include',
         },
 
     'defines': [
         'JSON_DLL_BUILD'
+        ],
+    'cxxflags': [
+        '-std=c++11',
         ],
     'include_dirs': [
         'include',

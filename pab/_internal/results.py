@@ -1,4 +1,5 @@
 # coding: utf-8
+from .log import logger
 
 
 class Results:
@@ -22,11 +23,11 @@ class Results:
 
     def skipped(self, src, reason):
         self.skipFiles[src] = reason
-        print('* skipped', src, str(reason))
+        logger.info('* skipped {} {}'.format(src, str(reason)))
 
     def error(self, src, reason):
         self.errorFiles[src] = reason
-        print('* error', src, reason)
+        logger.info('* error {} {}'.format(src, reason))
 
     def succeeded(self, src):
         self.succeedFiles.append(src)

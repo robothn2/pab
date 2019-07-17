@@ -4,25 +4,25 @@ lib = {
     'uri': 'base',
     'source_base_dir': 'd:/lib/chromium/base',
     'type': 'sharedLib',
-    'std': 'c++11',
     'public_include_dirs': [
-    ],
+        ],
     'include_dirs': [
         '..',
-    ],
+        ],
     'defines': [
         'BASE_IMPLEMENTATION',
 		'_GLIBCXX_PERMIT_BACKWARD_HASH',
-    ],
+        ],
     'ccflags': [
-    ],
+        ],
     'cxxflags': [
+        '-std=c++11',
         '-fexceptions',
         '-frtti',
-    ],
+        ],
     'deps': [
         '//third_party/zlib',
-    ],
+        ],
     'sources': [
         'third_party/dmg_fp/dmg_fp.h',
         'third_party/dmg_fp/g_fmt.cc',
@@ -538,7 +538,7 @@ lib = {
         'win/win_util.h',
         'win/wrapped_window_proc.cc',
         'win/wrapped_window_proc.h',
-    ],
+        ],
 }
 
 
@@ -547,17 +547,17 @@ def lib_dyn(lib, context):
     if not context.getOption('use_glib'):
         lib.sources -= [
             'nix',
-        ]
+            ]
         lib.sources -= [
             'atomicops_internals_x86_gcc.cc',
             'message_pump_glib.cc',
             'message_pump_aurax11.cc',
-        ]
+            ]
 
     if not context.getOption('toolkit_uses_gtk'):
         lib.sources -= [
             'message_pump_gtk.cc',
-        ]
+            ]
 
     if target_os == 'android':
         lib.sources -= [
@@ -565,14 +565,14 @@ def lib_dyn(lib, context):
             'files/file_path_watcher_kqueue.cc',
             'files/file_path_watcher_stub.cc',
             'system_monitor/system_monitor_posix.cc',
-        ],
+            ],
         lib.sources += [
             'files/file_path_watcher_linux.cc',
             'process_util_linux.cc',
             'sys_info_linux.cc',
             'sys_string_conversions_posix.cc',
             'worker_pool_linux.cc',
-        ],
+            ],
 
     if target_os == 'ios':
         lib.sources += [
@@ -591,12 +591,12 @@ def lib_dyn(lib, context):
             'sys_string_conversions_mac',
             'time_mac',
             'worker_pool_mac',
-        ],
+            ],
         # Exclude all process_util except the minimal implementation
         # needed on iOS (mostly for unit tests).
         lib.sources -= [
             'process_util',
-        ],
+            ],
     if target_os == 'mac':
         pass
 
@@ -606,12 +606,12 @@ def lib_dyn(lib, context):
             'base_paths_posix.cc',
             'native_library_posix.cc',
             'sys_string_conversions_posix.cc',
-        ]
+            ]
 
     if target_os == 'win':
         lib.include_dirs += [
             'third_party/wtl/include',
-        ]
+            ]
         lib.sources -= [
             'event_recorder_stubs.cc',
             'file_descriptor_shuffle.cc',
@@ -622,14 +622,14 @@ def lib_dyn(lib, context):
             # regression to page cycler moz.
             'sha1_win.cc',
             'string16.cc',
-        ]
+            ]
 
     if target_os == 'linux':
         lib.sources += [
             'files/file_path_watcher_kqueue.cc',
             'files/file_path_watcher_stub.cc',
-        ]
+            ]
 
 export_libs = [
     (lib, lib_dyn),
-]
+    ]

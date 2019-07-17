@@ -72,7 +72,8 @@ class PabTargets:
 
         sorted_uris = sorted(self.parsedTargets,
                              key=lambda x: self.parsedTargets[x][1])
-        logger.info(sorted_uris)
+        logger.info('Sorted targets: {}'.format(
+                sorted_uris))
         return [self.parsedTargets[uri][2] for uri in sorted_uris]
 
     def _is_deps_all_resolved(self, deps, uri):

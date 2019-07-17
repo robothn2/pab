@@ -11,19 +11,30 @@ from .target_utils import ItemList
 from .target import Target
 from .log import logger
 
-_props_of_cmd = [
+_props_all = (
         'defines', 'include_dirs', 'sysroots', 'sources',
         'ccflags', 'cxxflags', 'ldflags',
         'lib_dirs', 'libs',
-        ]
+        )
 
+_props_cmd = {
+        'cc': ('defines', 'include_dirs', 'sysroots', 'ccflags'),
+        'cxx': ('defines', 'include_dirs', 'sysroots', 'cxxflags'),
+        'ld': ('sysroots', 'ldflags', 'lib_dirs', 'libs'),
+        'ar': (),
+        }
 
 class Command(dict):
     def __init__(self, interpreter, *extra_args, **kwargs):
         dict.__init__({})
         self.name = kwargs['name']
         self.interpreter = interpreter
+
         self.results = kwargs['results']
+        self.success = False
+        self.retcode = 0
+        self.output = ''
+        self.error = ''
 
         self.cmds = [kwargs['executable']]  # executable must be first element
         for arg in extra_args:
@@ -31,7 +42,7 @@ class Command(dict):
 
         self.appendixs = []  # collect args which including `"`
         self['parts'] = ItemList(name='parts', unique=False)
-        for v in _props_of_cmd:
+        for v in _props_all:
             self[v] = ItemList(name=v)
 
         for k, v in kwargs.items():
@@ -42,6 +53,8 @@ class Command(dict):
 
         self.sources += kwargs.pop('sources')
         self.dst = kwargs.get('dst')
+
+        self += kwargs.get('target')  # merge target's props: defines, etc.
 
         self._preprocess(kwargs)
 
@@ -56,9 +69,11 @@ class Command(dict):
         assert(isinstance(other, Target))
         # merge other into self
         logger.debug('- merge Config(%s) into Command' % str(other))
-        for k in _props_of_cmd:
-            if hasattr(other, k):
-                self[k] += other.k
+        for k in _props_cmd.get(self.name):
+            prop_target = other.setting.get(k)
+            self[k] += prop_target
+            if prop_target:
+                logger.debug('   {}: {} -> {}'.format(k, prop_target, self[k]))
         return self
 
     def _preprocess(self, kwargs):
@@ -82,10 +97,11 @@ class Command(dict):
         for prop in ('defines', 'sysroots', 'include_dirs', 'lib_dirs', 'libs'):
             c = compositors.get(prop)
             if not c:
+                logger.warning('* cant translate ' + prop)
                 continue
             for v in self[prop]:
                 v_trans = c(v, kwargs)
-                logger.debug('- {} -> {}'.format(v, v_trans))
+                # logger.debug('   {} -> {}'.format(v, v_trans))
                 self.parts += v_trans
 
         # 'ccflags', 'cxxflags', 'ldflags',
@@ -111,11 +127,14 @@ class Command(dict):
         # using appendixs to avoid incorrect quote on cmd part which existing
         #   double quote `"`
         cmdline = self.getCmdLine()
-        exitcode, output = subprocess.getstatusoutput(cmdline)
-        if exitcode != 0:
-            error = output_analyze(cmdline, output)
-            return False, error
-        return True, output
+        self.retcode, self.output = subprocess.getstatusoutput(cmdline)
+
+        if self.retcode != 0:
+            self.error = output_analyze(cmdline, self.output)
+            self.success = False
+        else:
+            self.success = True
+        return self.success
 
     def getCmdLine(self):
         return subprocess.list2cmdline(self.cmds) \

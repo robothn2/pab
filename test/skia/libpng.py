@@ -3,19 +3,21 @@
 libpng = {
     'uri': '//third_party/libpng',
     'type': 'sharedLib',
-    'std': 'c11',
     'source_base_dir': 'd:/lib/chromium/third_party/libpng',
     'public_include_dirs': [
         ".",
         "libpng",
-    ],
+        ],
 
     'defines': [
         "PNG_SET_OPTION_SUPPORTED"
-    ],
+        ],
+    'cxxflags': [
+        '-std=c++11',
+        ],
     'deps': [
         "//third_party/zlib",
-    ],
+        ],
     'sources': [
         "png.c",
         "pngerror.c",
@@ -32,10 +34,10 @@ libpng = {
         "pngwrite.c",
         "pngwtran.c",
         "pngwutil.c",
-    ],
+        ],
     'libs': [
         'c', 'z',
-    ],
+        ],
 }
 
 
