@@ -68,8 +68,6 @@ class Target:
             cmd.ldflags += self.setting.ldflags
             cmd.lib_dirs += self.rebasePath(self.setting.lib_dirs)
             cmd.libs += self.setting.libs
-        elif cmd.name == 'ar':
-            pass
 
     def build(self, builder, **kwargs):
         logger.info('== Target: {}, type: {}, base: {}'.format(
@@ -84,7 +82,11 @@ class Target:
 
         objs = []
         created_dst_folders = []
-        for file in self.setting.get('sources', []):
+        sources = self.setting.get('sources', [])
+        counter = 0
+        total = len(sources)
+        for file in sources:
+            counter += 1
             # cache for sub folders
             if not isinstance(file, str):
                 logger.warning(f'invalid file: {file}')
@@ -99,17 +101,25 @@ class Target:
             src = os.path.realpath(os.path.join(self.rootSource, file))
             detected = file_detect(src)
             if not detected.cmd:
+                logger.info('{:>3}/{} unhandled {}'.format(counter, total, file))
                 builder.results.unhandled(file)
                 continue
             result, reason = detected.match(self.request)
             if not result:
+                logger.info('{:>3}/{} skipped {}'.format(counter, total, file))
                 builder.results.skipped(file, reason)
                 continue
 
+            logger.info('{:>3}/{} {} {}'.format(counter, total, detected.cmd, file))
             dst = os.path.join(self.request.rootBuild, file) + '.o'
             cmd = builder.execCommand(
                         detected.cmd, sources=src, dst=dst,
                         target=self, **kwargs)
+            if not cmd:
+                continue
+
+            logger.debug('cmdline: ' + cmd.getCmdLine())
+
             if cmd.success:
                 builder.results.succeeded(file)
                 objs.append(dst)
@@ -126,9 +136,10 @@ class Target:
         if not os.path.exists(dstfolder):
             os.makedirs(dstfolder)
 
+        cmd_name = 'ar' if self.isStaticLib() else 'ld'
+        logger.info('{} {}'.format(cmd_name, executable))
         cmd = builder.execCommand(
-                'ar' if self.isStaticLib() else 'ld',
-                sources=objs, dst=executable, target=self, **kwargs)
+                cmd_name, sources=objs, dst=executable, target=self, **kwargs)
         if not cmd.success:
             builder.results.error(file, cmd.error)
             return

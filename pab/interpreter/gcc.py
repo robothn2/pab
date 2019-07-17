@@ -53,11 +53,6 @@ class GCC:
         gcc -shared -fpic -o libhello.so hello.o
         gcc -o hello main.c libhello.so
         '''
-        if cmd.name == 'ar':
-            cmd.addPart(cmd.dst)  # .a must insert before .o files
-        else:
-            cmd.parts += ['-o', cmd.dst]
-
         if cmd.name == 'cc':
             cmd.ccflags += '-Wall'
         elif cmd.name == 'cxx':
@@ -65,3 +60,8 @@ class GCC:
         elif cmd.name == 'ld':
             if kwargs['target'].isSharedLib():
                 cmd.ldflags += ['-shared', '-fpic']
+
+        if cmd.name == 'ar':
+            cmd += cmd.dst
+        else:
+            cmd += ['-o', cmd.dst]

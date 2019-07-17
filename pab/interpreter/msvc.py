@@ -12,39 +12,41 @@ class WinSDK:
         self.shared_libs = {'x86': ItemList(name='x86'), 'x64': ItemList(name='x64')}
 
         if not ver or ver == '8.1':
-            root = r'C:\Program Files (x86)\Windows Kits\8.1\Include'
-            self.include_dirs += os.path.join(root, 'include')
+            root = r'C:\Program Files (x86)\Windows Kits\8.1'
+            self.rootBin = os.path.join(root, r'bin')
             self.include_dirs += [
-                    os.path.join(root, 'um'),
-                    os.path.join(root, 'shared'),
+                    os.path.join(root, r'include'),
+                    os.path.join(root, r'include\um'),
+                    os.path.join(root, r'include\shared'),
                     ]
 
-            root = r'C:\Program Files (x86)\Windows Kits\8.1\Lib\winv6.3'
-            self.lib_dirs['x86'] += os.path.join(root, r'um\x86')
-            self.lib_dirs['x64'] += os.path.join(root, r'um\x64')
+            root = os.path.join(root, r'Lib\winv6.3')
+            self.lib_dirs['x86'] += os.path.join(root, r'Lib\winv6.3\um\x86')
+            self.lib_dirs['x64'] += os.path.join(root, r'Lib\winv6.3\um\x64')
 
         elif ver == '7.1':
             root = r'C:\Program Files (x86)\Microsoft SDKs\Windows\v7.1A'
+            self.rootBin = os.path.join(root, r'bin')
             self.include_dirs += os.path.join(root, 'include')
             self.lib_dirs['x86'] += os.path.join(root, 'lib')
             self.lib_dirs['x64'] += os.path.join(root, r'lib\x64')
 
         elif re.match(r'10\.\d+\.\d+\.\d+', ver):
-            root = fr'C:\Program Files (x86)\Windows Kits\10\Include\{ver}'
+            root = r'C:\Program Files (x86)\Windows Kits\10'
+            self.rootBin = os.path.join(root, r'bin\x64')
             self.include_dirs += [
-                    os.path.join(root, 'ucrt'),
-                    os.path.join(root, 'um'),
-                    os.path.join(root, 'shared'),
+                    os.path.join(root, fr'Include\{ver}\ucrt'),
+                    os.path.join(root, fr'Include\{ver}\um'),
+                    os.path.join(root, fr'Include\{ver}\shared'),
                     ]
 
-            root = fr'C:\Program Files (x86)\Windows Kits\10\Lib\{ver}'
             self.lib_dirs['x86'] += [
-                    os.path.join(root, r'ucrt\x86'),
-                    os.path.join(root, r'um\x86'),
+                    os.path.join(root, fr'Lib\{ver}\ucrt\x86'),
+                    os.path.join(root, fr'Lib\{ver}\um\x86'),
                     ]
             self.lib_dirs['x64'] += [
-                    os.path.join(root, r'ucrt\x64'),
-                    os.path.join(root, r'um\x64'),
+                    os.path.join(root, fr'Lib\{ver}\ucrt\x64'),
+                    os.path.join(root, fr'Lib\{ver}\um\x64'),
                     ]
 
 
@@ -53,19 +55,23 @@ class MSVC:
         self.name = 'MSVC'
         self.kwargs = kwargs
         # Get install path of vs2015:
-        ver = kwargs.get('ver', 14)
-        self.root = fr'C:\Program Files (x86)\Microsoft Visual Studio {ver}.0'
+        ver = kwargs.get('ver', '14.0')
+        self.root = fr'C:\Program Files (x86)\Microsoft Visual Studio {ver}'
         if not os.path.exists(self.root):
             raise Exception('Invalid vs dir: %s' % self.root)
 
+        self.sdk = WinSDK(kwargs.get('platform'))
         self._cmds = {
                 'cc':   (os.path.join(self.root, r'vc\bin\cl.exe'),
                          '/TC', '/nologo', '/c'),
                 'cxx':  (os.path.join(self.root, r'vc\bin\cl.exe'),
                          '/TP', '/nologo', '/c'),
-                'ar':   (os.path.join(self.root, r'vc\bin\lib.exe'), ),
+                'rc':   (os.path.join(self.sdk.rootBin, 'rc.exe'),
+                         '/nologo'),
+                'ar':   (os.path.join(self.root, r'vc\bin\link.exe'),
+                         '-lib'),
                 'ld':   (os.path.join(self.root, r'vc\bin\link.exe'),
-                         '/nologo',),
+                         '/nologo'),
                 }
         self._compositors = {
                 'sysroots':      lambda path, args: f'/I"{path}"',
@@ -74,8 +80,6 @@ class MSVC:
                 'libs':          lambda path, args: path,
                 'defines':       lambda macro, args: f'/D "{macro}"',
                 }
-
-        self.sdk = WinSDK(kwargs.get('target_platform_ver'))
 
     def __str__(self):
         return self.name
@@ -91,9 +95,12 @@ class MSVC:
 
     def asCmdFilter(self, cmd, kwargs):
         if cmd.name == 'cxx' or cmd.name == 'cc':
+            # $VSROOT\VC\bin\amd64_x86\CL.exe /c /I"..\..\include" /Zi /nologo /W1 /WX- /Od /Oy- /D JSON_DLL /D WIN32 /D _WINDOWS /D _SILENCE_STDEXT_HASH_DEPRECATION_WARNINGS /D NDEBUG /D _USING_V110_SDK71_ /D _UNICODE /D UNICODE /Gm- /EHsc /MD /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"../../build/stdafx.o" /Fd"build/myprj/vc140.pdb" /Gd /TP /wd4819 src\myprj\stdafx.cpp
             cmd.defines += ['WIN32', '_WINDOWS',
                             '_UNICODE', 'UNICODE']
             flags = cmd.get(cmd.name + 'flags')
+            if cmd.name == 'cxx':
+                flags += '/EHsc'  # enable c++ execption
             flags += ['/Gm-',  # disable minimalest rebuild
                       '/GS',   # 启用安全检查，检测堆栈缓冲区溢出
                       '/fp:precise', # 浮点模型: 精度
@@ -112,17 +119,15 @@ class MSVC:
                 if request.hasMember('crt_static'):
                     flags += '/MTd'  # Multithreaded static debug
                 else:
-                    flags += '/MDd'
+                    flags += '/MDd'  # Multithreaded DLL debug
             else:
                 cmd.defines += 'NDEBUG'
-                flags += '/EHsc'  # enable c++ execption
                 if request.hasMember('crt_static'):
-                    flags += '/MT'  # Multithreaded DLL debug
+                    flags += '/MT'
                 else:
                     flags += '/MD'
 
-            dst = kwargs['dst']
-            cmd.addPart(f'/Fo:"{dst}"')
+            cmd += '/Fo:"%s"' % kwargs['dst']
 
             cmd.include_dirs += [
                     os.path.join(self.root, r'VC\include'),
@@ -130,15 +135,20 @@ class MSVC:
                     ]
             cmd.include_dirs += self.sdk.include_dirs
 
+        elif cmd.name == 'rc':
+            # "C:\Program Files (x86)\Windows Kits/10/bin/x86/rc.exe" /nologo /l 0x804 /I"C:\Program Files (x86)\Windows Kits/10/Include/10.0.17134.0/um" /I"C:\Program Files (x86)\Windows Kits/10/Include/10.0.17134.0/shared" /Fo"d:\lyra.res" D:/src/lyra/lyra.rc
+            cmd += ['-l', '0x804']  # language: Chinese Simplyfied
+            cmd += '/Fo"%s"' % kwargs['dst']  # Notice: no ':'
+            cmd.include_dirs += self.sdk.include_dirs  # for winres.h
+
         elif cmd.name == 'ar':
-            pass
+            cmd += '/OUT:"%s"' % kwargs['dst']
 
         elif cmd.name == 'ld':
-            dst = kwargs['dst']
-            cmd.addPart(f'/OUT:"{dst}"')
-            cmd.addPart(r'/SUBSYSTEM:CONSOLE,"5.01"')
+            # $VSROOT\VC\bin\amd64_x86\link.exe /OUT:"build/myprj.exe" /NOLOGO /LIBPATH:..\..\prebuild\Release gbase.libkernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"build/myprj.pdb" /SUBSYSTEM:CONSOLE,"5.01" /LARGEADDRESSAWARE /DYNAMICBASE /NXCOMPAT /IMPLIB:"build/myprj.lib" /MACHINE:X86 /SAFESEH build/*.obj
+            cmd += '/OUT:"%s"' % kwargs['dst']
             cmd.ldflags += [
-                    r'/SUBSYSTEM:CONSOLE,"5.01"',
+                    '/SUBSYSTEM:CONSOLE,"5.01"',
                     '/LARGEADDRESSAWARE',
                     '/DYNAMICBASE', '/NXCOMPAT', '/SAFESEH',
                     ]

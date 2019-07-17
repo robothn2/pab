@@ -68,14 +68,9 @@ class Clang:
         if cmd.name not in ('ar', 'cc', 'cxx', 'ld'):
             return
 
-        dst = kwargs['dst']
-        if cmd.name == 'ar':
-            cmd.parts += dst
-        else:
-            cmd.parts += ['-o', dst]
-
         if cmd.name == 'cc':
             cmd.ccflags += ['-Wall', '--target=' + self.target_triple]
+
         elif cmd.name == 'cxx':
             cmd.cxxflags += ['-Wall', '--target=' + self.target_triple]
             cmd.defines += '_LIBCPP_HAS_THREAD_API_PTHREAD'
@@ -88,4 +83,8 @@ class Clang:
             if kwargs['target'].isSharedLib():
                 cmd.ldflags += ['-shared', '-fpic']
 
-        cmd.translate(self.compositors)
+        dst = kwargs['dst']
+        if cmd.name == 'ar':
+            cmd += dst
+        else:
+            cmd += ['-o', dst]

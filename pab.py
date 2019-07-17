@@ -12,7 +12,7 @@ import logging.handlers
 if __name__ == '__main__':
     logger = logging.getLogger("pab")
     if not logger.hasHandlers():
-        logger.setLevel(logging.DEBUG)
+        logger.setLevel(logging.INFO)
 
         log_to_stdout = logging.StreamHandler()
         log_to_stdout.setLevel(logging.INFO)
@@ -25,12 +25,12 @@ if __name__ == '__main__':
         log_to_file.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s"))
         logger.addHandler(log_to_file)
 
-    compiler = MSVC(ver=14, target_platform_ver='10.0.17134.0')
+    compiler = MSVC(ver='14.0', platform='10.0.17134.0')
     #compiler = NDK(path='d:/lib/android-ndk-r14b', platform=9, compiler='gcc')
-    request = Request(target_os='android', target_cpu='armv7a',
+    request = Request(target_os='win32', target_cpu='x86',
                       stl='llvm-libc++',  # 'gnu-libstdc++', 'llvm-libc++'
                       root_build='D:/lib/build')
 
-    target = PabTargets(root='test/jsoncpp')
+    target = PabTargets(root='test/lyra')
     builder = Builder(request, compiler)
     builder.build(target, dryrun=False)

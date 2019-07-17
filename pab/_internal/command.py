@@ -11,38 +11,38 @@ from .target_utils import ItemList
 from .target import Target
 from .log import logger
 
-_props_all = (
+_all_props = (
         'defines', 'include_dirs', 'sysroots', 'sources',
         'ccflags', 'cxxflags', 'ldflags',
         'lib_dirs', 'libs',
         )
 
-_props_cmd = {
+_cmd_affected_props = {
         'cc': ('defines', 'include_dirs', 'sysroots', 'ccflags'),
         'cxx': ('defines', 'include_dirs', 'sysroots', 'cxxflags'),
         'ld': ('sysroots', 'ldflags', 'lib_dirs', 'libs'),
         'ar': (),
+        'rc': ('defines', 'include_dirs'),
         }
 
 class Command(dict):
     def __init__(self, interpreter, *extra_args, **kwargs):
         dict.__init__({})
         self.name = kwargs['name']
-        self.interpreter = interpreter
+        self._interp = interpreter
 
-        self.results = kwargs['results']
         self.success = False
         self.retcode = 0
         self.output = ''
         self.error = ''
 
-        self.cmds = [kwargs['executable']]  # executable must be first element
+        self._front_cmds = [kwargs['executable']]  # executable must be first element
         for arg in extra_args:
             self.addPart(arg)
 
-        self.appendixs = []  # collect args which including `"`
-        self['parts'] = ItemList(name='parts', unique=False)
-        for v in _props_all:
+        self._quoted_cmds = []  # collect args which including `"`
+        self._tail_cmds = ItemList(name='tail_cmds', unique=False)
+        for v in _all_props:
             self[v] = ItemList(name=v)
 
         for k, v in kwargs.items():
@@ -66,34 +66,38 @@ class Command(dict):
     def __iadd__(self, other):
         if not other:
             return self
-        assert(isinstance(other, Target))
-        # merge other into self
-        logger.debug('- merge Config(%s) into Command' % str(other))
-        for k in _props_cmd.get(self.name):
-            prop_target = other.setting.get(k)
-            self[k] += prop_target
-            if prop_target:
-                logger.debug('   {}: {} -> {}'.format(k, prop_target, self[k]))
+        if isinstance(other, Target):
+            # merge Config into Command
+            logger.debug('- merge Config(%s) into Command' % str(other))
+            for k in _cmd_affected_props.get(self.name, ()):
+                prop_target = other.setting.get(k)
+                self[k] += prop_target
+                if prop_target:
+                    logger.debug('   {}: {} -> {}'.format(k, prop_target, self[k]))
+        elif isinstance(other, list):
+            for item in other:
+                assert(isinstance(item, str))
+                self.addPart(item)
+        elif isinstance(other, str):
+            self.addPart(other)
         return self
 
     def _preprocess(self, kwargs):
         for cfg in kwargs.pop('configs', []):
-            if cfg == self.interpreter or not hasattr(cfg, 'asCmdFilter'):
+            if cfg == self._interp or not hasattr(cfg, 'asCmdFilter'):
                 continue
             cfg.asCmdFilter(self, kwargs)
 
-        if hasattr(self.interpreter, 'asCmdFilter'):
-            self.interpreter.asCmdFilter(self, kwargs)
+        if hasattr(self._interp, 'asCmdFilter'):
+            self._interp.asCmdFilter(self, kwargs)
 
-        if hasattr(self.interpreter, 'asCmdInterpreter'):
-            self._translate(self.interpreter.asCmdInterpreter(), kwargs)
-        else:
-            self.parts += self.sources
+        if hasattr(self._interp, 'asCmdInterpreter'):
+            self._translateAllExceptSources(self._interp.asCmdInterpreter(), kwargs)
 
-    def _translate(self, compositors, kwargs):
-        self._mergeSources(
-                os.path.join(kwargs['request'].rootBuild, 'src_list.txt'))
+        # MS sdk's rc.exe need sources at tail
+        self._translateSources(kwargs)
 
+    def _translateAllExceptSources(self, compositors, kwargs):
         for prop in ('defines', 'sysroots', 'include_dirs', 'lib_dirs', 'libs'):
             c = compositors.get(prop)
             if not c:
@@ -102,18 +106,18 @@ class Command(dict):
             for v in self[prop]:
                 v_trans = c(v, kwargs)
                 # logger.debug('   {} -> {}'.format(v, v_trans))
-                self.parts += v_trans
+                self._tail_cmds += v_trans
 
         # 'ccflags', 'cxxflags', 'ldflags',
-        self.parts += self.get(self.name + 'flags')
+        self._tail_cmds += self.get(self.name + 'flags')
 
-    def _mergeSources(self, tmp_file_path):
+    def _translateSources(self, kwargs):
         # write all source file path into file, and use @file
         if len(self.sources) < 5:
-            self.parts += self.sources
+            self._tail_cmds += self.sources
             return
 
-        tmp_file = tmp_file_path
+        tmp_file = os.path.join(kwargs['request'].rootBuild, 'src_list.txt')
         with open(tmp_file, 'w', encoding='utf-8') as f:
             for o in self.sources:
                 o = os.path.realpath(o)
@@ -121,7 +125,7 @@ class Command(dict):
                 f.write(o)
                 f.write(' ')
             f.close()
-        self.parts += '@' + tmp_file
+        self._tail_cmds += '@' + tmp_file
 
     def execute(self):
         # using appendixs to avoid incorrect quote on cmd part which existing
@@ -137,15 +141,15 @@ class Command(dict):
         return self.success
 
     def getCmdLine(self):
-        return subprocess.list2cmdline(self.cmds) \
-            + ' ' + ' '.join(self.parts) \
-            + ' ' + ' '.join(self.appendixs)
+        return subprocess.list2cmdline(self._front_cmds) \
+            + ' ' + ' '.join(self._quoted_cmds) \
+            + ' ' + ' '.join(self._tail_cmds)
 
     def addPart(self, part):
         if not part:
             return
         assert(isinstance(part, str))
         if '"' in part:
-            self.appendixs.append(part)
+            self._quoted_cmds.append(part)
         else:
-            self.cmds.append(part)
+            self._front_cmds.append(part)

@@ -61,16 +61,14 @@ class Builder:
         self.results.dump()
 
     def execCommand(self, cmd_name, **kwargs):
-        if not cmd_name:
-            return (False, None)
-
         cmd = self._createCmd(cmd_name,
                               results=self.results, request=self.request,
                               configs=self.configs, **kwargs)
-        print('=', cmd.name, cmd.dst or cmd.sources[0])
-        logger.debug('cmdline: ' + cmd.getCmdLine())
+        if not cmd:
+            print('* fail to create command:', cmd_name, kwargs['sources'])
+            return
         if kwargs.get('dryrun', False):
-            return True, 'dryrun ok'
+            return
         cmd.execute()
         return cmd
 

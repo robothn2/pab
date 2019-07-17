@@ -17,7 +17,7 @@ A list derived class, supports:
     li -= ['c3.c', 'c4.c']  # -= list
     li -= 'str'             # -= str
     li -= r'^c[12]\.c'      # -= regex pattern
-    li += '*.c'             # += wildcard pattern, self.base must be set
+    li += '*.c'             # += wildcard pattern, self.base must be set first
 '''
 class ItemList(list):
     def __init__(self, *args, **kwargs):
@@ -34,12 +34,12 @@ class ItemList(list):
         # print('-', self.name, '+=', other)
         if isinstance(other, list):
             for item in other:
-                self._add_str(item)
+                self.addPattern(item)
         else:
-            self._add_str(other)
+            self.addPattern(other)
         return self
 
-    def _add_str(self, s):
+    def addPattern(self, s):
         if self.base:
             # support wildcard += if self.base available
             if s[0] == '^':
