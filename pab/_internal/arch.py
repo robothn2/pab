@@ -71,6 +71,7 @@ class ArchDetect:
 
         name, ext = os.path.splitext(filename)
         self.cmd = _ext_map.get(ext, None)
+        # todo: handle Camel naming rule
         self.tags += name.lower().split('_')
 
         self.target_os = None
@@ -120,4 +121,6 @@ def os_get_tags(osname):
 
 if __name__ == '__main__':
     d = arch_detect('files/file_path_watcher_win.cc')
-    print(d.cmd, d.target_os, d.arch, d.target_cpu, d.tags)
+    print(d)
+    d = arch_detect('mac/file_path.cc')
+    print(str(d))

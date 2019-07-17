@@ -78,8 +78,9 @@ class NDK:
         if not os.path.exists(self.sysroot):
             return (False, 'Ndk sysroot not exist: %s' % self.sysroot)
 
+        stl = self.kwargs.get('stl', 'gnu-libstdc++')
         self.rootStl = NDKStl(
-                os.path.join(self.root, 'sources/cxx-stl', request.stl),
+                os.path.join(self.root, 'sources/cxx-stl', stl),
                 arch=self.getCppLibSubfolder(request))
 
         if self.kwargs.get('compiler', 'gcc') == 'gcc':

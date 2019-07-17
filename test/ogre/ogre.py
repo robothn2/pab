@@ -48,7 +48,6 @@ def dyn_common(lib, context):
     if 'apple' in target_os:
         #SET(CMAKE_SIZEOF_VOID_P 4)
         #set(CMAKE_XCODE_ATTRIBUTE_GCC_VERSION "com.apple.compilers.llvm.clang.1_0")
-        lib.stl = 'libc++'
         if 'ios' in target_os:
             lib.type = 'staticLib'
             '''

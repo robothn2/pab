@@ -21,8 +21,9 @@ class WinSDK:
                     ]
 
             root = os.path.join(root, r'Lib\winv6.3')
-            self.lib_dirs['x86'] += os.path.join(root, r'Lib\winv6.3\um\x86')
-            self.lib_dirs['x64'] += os.path.join(root, r'Lib\winv6.3\um\x64')
+            self.lib_dirs['x86'] += os.path.join(root, r'um\x86')
+            self.lib_dirs['x64'] += os.path.join(root, r'um\x64')
+            self._use_sdk_10('10.0.10240.0')  # for corecrt.h
 
         elif ver == '7.1':
             root = r'C:\Program Files (x86)\Microsoft SDKs\Windows\v7.1A'
@@ -32,22 +33,25 @@ class WinSDK:
             self.lib_dirs['x64'] += os.path.join(root, r'lib\x64')
 
         elif re.match(r'10\.\d+\.\d+\.\d+', ver):
-            root = r'C:\Program Files (x86)\Windows Kits\10'
-            self.rootBin = os.path.join(root, r'bin\x64')
-            self.include_dirs += [
-                    os.path.join(root, fr'Include\{ver}\ucrt'),
-                    os.path.join(root, fr'Include\{ver}\um'),
-                    os.path.join(root, fr'Include\{ver}\shared'),
-                    ]
+            self._use_sdk_10(ver)
 
-            self.lib_dirs['x86'] += [
-                    os.path.join(root, fr'Lib\{ver}\ucrt\x86'),
-                    os.path.join(root, fr'Lib\{ver}\um\x86'),
-                    ]
-            self.lib_dirs['x64'] += [
-                    os.path.join(root, fr'Lib\{ver}\ucrt\x64'),
-                    os.path.join(root, fr'Lib\{ver}\um\x64'),
-                    ]
+    def _use_sdk_10(self, ver):
+        root = r'C:\Program Files (x86)\Windows Kits\10'
+        self.rootBin = os.path.join(root, r'bin\x64')
+        self.include_dirs += [
+                os.path.join(root, fr'Include\{ver}\ucrt'),
+                os.path.join(root, fr'Include\{ver}\um'),
+                os.path.join(root, fr'Include\{ver}\shared'),
+                ]
+
+        self.lib_dirs['x86'] += [
+                os.path.join(root, fr'Lib\{ver}\ucrt\x86'),
+                os.path.join(root, fr'Lib\{ver}\um\x86'),
+                ]
+        self.lib_dirs['x64'] += [
+                os.path.join(root, fr'Lib\{ver}\ucrt\x64'),
+                os.path.join(root, fr'Lib\{ver}\um\x64'),
+                ]
 
 
 class MSVC:

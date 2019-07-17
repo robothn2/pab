@@ -9,9 +9,8 @@
     from pab.targets.pab_folder import PabTargets
     from pab.android_ndk.ndk import NDK
 
-    compiler = NDK(path='~/lib/android-ndk-r14b', platform=9, compiler='gcc')
+    compiler = NDK(path='~/lib/android-ndk-r14b', platform=9, compiler='gcc', stl='llvm-libc++')
     request = Request(target_os='android', target_cpu='armv7a',
-                      stl='llvm-libc++',
                       root_build='~/lib/build')
     target = PabTargets(root='test/hello')
     builder = Builder(request, compiler)

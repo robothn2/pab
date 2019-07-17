@@ -5,6 +5,7 @@ import re
 import shutil
 from .arch import file_detect
 from .target_context import TargetContext
+from .target_utils import ItemList
 from .log import logger
 
 
@@ -27,6 +28,7 @@ class Target:
         self.type = self.setting.get('type', 'staticLib')
         self.name = re.split(r'[./\\]', self.uri)[-1]
         self.rootSource = base
+        self.objs = ItemList(name='objs')
         self.artifact = None
 
     def __str__(self):
@@ -80,7 +82,6 @@ class Target:
         if not self.isArtifact():
             return
 
-        objs = []
         created_dst_folders = []
         sources = self.setting.get('sources', [])
         counter = 0
@@ -122,11 +123,11 @@ class Target:
 
             if cmd.success:
                 builder.results.succeeded(file)
-                objs.append(dst)
+                self.objs += dst
             else:
                 builder.results.error(file, cmd.error)
 
-        if len(objs) == 0:
+        if len(self.objs) == 0:
             return
 
         executable = os.path.join(
@@ -139,7 +140,7 @@ class Target:
         cmd_name = 'ar' if self.isStaticLib() else 'ld'
         logger.info('{} {}'.format(cmd_name, executable))
         cmd = builder.execCommand(
-                cmd_name, sources=objs, dst=executable, target=self, **kwargs)
+                cmd_name, sources=self.objs, dst=executable, target=self, **kwargs)
         if not cmd.success:
             builder.results.error(file, cmd.error)
             return
