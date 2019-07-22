@@ -30,7 +30,5 @@ if __name__ == '__main__':
     #               stl='llvm-libc++')  # 'gnu-libstdc++', 'llvm-libc++'
     request = Request(target_os='win', target_cpu='x86',
                       root_build='D:/lib/build')
-
-    target = PabTargets(root='test/hello')
-    builder = Builder(request, compiler)
-    builder.build(target, dryrun=False)
+    builder = Builder(request, compiler, dryrun=True, job=10)
+    builder.build(PabTargets(root='test/lyra'))

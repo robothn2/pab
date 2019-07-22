@@ -29,7 +29,12 @@ class Command(dict):
     def __init__(self, interpreter, *extra_args, **kwargs):
         dict.__init__({})
         self.name = kwargs['name']
+        self.build_index = 0
+        self.build_total = 0
+        self.build_title = kwargs.get('build_title')
         self._interp = interpreter
+        self._kwargs = kwargs
+        print('?', kwargs.get('dryrun'))
 
         self.success = False
         self.retcode = 0
@@ -54,9 +59,7 @@ class Command(dict):
 
         self.sources += kwargs.pop('sources')
         self.dst = kwargs.get('dst')
-
         self += kwargs.get('target')  # merge target's props: defines, etc.
-
         self._preprocess(kwargs)
 
     def __getattr__(self, name):
@@ -131,7 +134,16 @@ class Command(dict):
     def execute(self):
         # using appendixs to avoid incorrect quote on cmd part which existing
         #   double quote `"`
-        cmdline = self.getCmdLine()
+        cmdline = self._getCmdLine()
+        if self.build_total > 1 and self.build_title:
+            logger.info('{:>3}/{} {} {}'.format(self.build_index,
+                        self.build_total, self.name, self.build_title))
+        logger.debug('cmdline: ' + cmdline)
+
+        if self._kwargs.get('dryrun', False):
+            self.success = True
+            return
+
         self.retcode, self.output = subprocess.getstatusoutput(cmdline)
 
         if self.retcode != 0:
@@ -142,7 +154,7 @@ class Command(dict):
             self.artifacts.append(self.dst)
         return self.success
 
-    def getCmdLine(self):
+    def _getCmdLine(self):
         return subprocess.list2cmdline(self._front_cmds) \
             + ' ' + ' '.join(self._quoted_cmds) \
             + ' ' + ' '.join(self._tail_cmds)

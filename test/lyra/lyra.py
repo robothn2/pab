@@ -57,7 +57,7 @@ def lyra_dyn(lib, context):
         lib.include_dirs += 'src/platform/win'
         lib.sources += [
                 'src/platform/win/*.cpp',
-                'src/platform/win/*.cpp',
+                'src/platform/win/*.c',
                 ]
         lib.lib_dirs += [
                 os.path.join(lyra_external, 'gbase/build/Release/lib'),
@@ -72,7 +72,6 @@ def lyra_dyn(lib, context):
         lib.include_dirs += 'src/platform/linux'
         lib.sources += [
                 'src/platform/linux/*.cpp',
-                'src/platform/linux/*.mm',
                 ]
         lib.libs += ['skia', 'gbase', 'zlibstat', 'nvapi']
 
@@ -85,15 +84,6 @@ def lyra_dyn(lib, context):
         lib.libs += ['skia', 'gbase', 'zlibstat', 'nvapi']
         lib.ldflags += ['-framework', 'Carbon', '-framework', 'Cocoa']
 
-    elif 'android' in target_os:
-        lib.include_dirs += 'src/platform/android'
-        lib.sources += [
-                'src/platform/android/*.cpp',
-                'src/platform/android/*.mm',
-                ]
-        lib.libs += ['skia', 'gbase', 'z', 'nvapi']
-        lib.libs += ['GLES2', 'libc++_shared']
-
     elif 'ios' in target_os:
         lib.include_dirs += 'src/platform/ios'
         lib.sources += [
@@ -101,6 +91,14 @@ def lyra_dyn(lib, context):
                 'src/platform/ios/*.mm',
                 ]
         lib.libs += ['skia', 'gbase', 'z', 'nvapi']
+
+    elif 'android' in target_os:
+        lib.include_dirs += 'src/platform/android'
+        lib.sources += [
+                'src/platform/android/*.cpp',
+                ]
+        lib.libs += ['skia', 'gbase', 'z', 'nvapi']
+        lib.libs += ['GLES2', 'libc++_shared']
 
     lib.sources -= [
          	'src/ext/UISystem.cpp',

@@ -84,14 +84,11 @@ class Target:
 
         created_dst_folders = []
         sources = self.setting.get('sources', [])
-        counter = 0
-        total = len(sources)
         for file in sources:
-            counter += 1
-            # cache for sub folders
             if not isinstance(file, str):
-                logger.warning(f'invalid file: {file}')
+                logger.warning(f' invalid file: {file}')
                 continue
+            # cache for sub folder creation
             sub_folder = os.path.dirname(file)
             if sub_folder and sub_folder not in created_dst_folders:
                 dst_folder = os.path.join(self.request.rootBuild, sub_folder)
@@ -102,29 +99,22 @@ class Target:
             src = os.path.realpath(os.path.join(self.rootSource, file))
             detected = file_detect(src)
             if not detected.cmd:
-                logger.info('{:>3}/{} unhandled {}'.format(counter, total, file))
+                logger.info(' unhandled ' + file)
                 builder.results.unhandled(file)
                 continue
             result, reason = detected.match(self.request)
             if not result:
-                logger.info('{:>3}/{} skipped {}'.format(counter, total, file))
+                logger.info(' skipped ' + file)
                 builder.results.skipped(file, reason)
                 continue
 
-            logger.info('{:>3}/{} {} {}'.format(counter, total, detected.cmd, file))
             dst = os.path.join(self.request.rootBuild, file) + '.o'
-            cmd = builder.execCommand(
+            builder.poolCommand(
                         detected.cmd, sources=src, dst=dst,
-                        target=self, **kwargs)
-            if not cmd:
-                continue
+                        build_title=file, target=self, **kwargs)
 
-            if cmd.success:
-                builder.results.succeeded(file)
-                self.objs += dst
-            else:
-                builder.results.error(file, cmd.error)
-
+        for cmd in builder.waitPoolComplete():
+            self.objs += cmd.dst
         if len(self.objs) == 0:
             return
 
@@ -138,7 +128,8 @@ class Target:
         cmd_name = 'ar' if self.isStaticLib() else 'ld'
         logger.info('{} {}'.format(cmd_name, executable))
         cmd = builder.execCommand(
-                cmd_name, sources=self.objs, dst=executable, target=self, **kwargs)
+                cmd_name, sources=self.objs, dst=executable,
+                target=self, **kwargs)
         if not cmd.success:
             builder.results.error(file, cmd.error)
             return

@@ -1,4 +1,5 @@
 # coding: utf-8
+from concurrent.futures import ThreadPoolExecutor
 from ._internal.command import Command
 from ._internal.results import Results
 from .host_os.bin_utils import BinUtils
@@ -6,12 +7,14 @@ from ._internal.log import logger
 
 
 class Builder:
-    def __init__(self, request, *configs):
+    def __init__(self, request, *configs, **kwargs):
+        self._kwargs = kwargs
         self.initialConfigs = configs
         self.request = request
         self.results = Results()
         self.configs = []
         self.interpreters = []
+        self._cmds = []
         self.binutils = BinUtils(suffix=request.hostOS.getExecutableSuffix())
 
     def _collect_available_configs(self):
@@ -49,16 +52,44 @@ class Builder:
         logger.info('Interpreters: {}'.format(
                 [cfg.name for cfg in self.interpreters]))
 
-    def build(self, targets, **kwargs):
+    def build(self, targets):
         self._collect_available_configs()
 
         self.results.reset(title=str(targets))
         self.configs.append(targets)
 
-        targets.build(self.request, self, **kwargs)
+        targets.build(self.request, self)
 
         self.configs.remove(targets)
         self.results.dump()
+
+    def poolCommand(self, cmd_name, **kwargs):
+        cmd = self._createCmd(cmd_name,
+                              results=self.results, request=self.request,
+                              configs=self.configs, **kwargs, **self._kwargs)
+        if not cmd:
+            print('* fail to create command:', cmd_name, kwargs['sources'])
+            return
+        self._cmds.append(cmd)
+
+    def waitPoolComplete(self):
+        total = len(self._cmds)
+        for i in range(total):
+            cmd = self._cmds[i]
+            cmd.build_index = i + 1
+            cmd.build_total = total
+
+        def exec_cmd(cmd):
+            cmd.execute()
+
+            if cmd.success:
+                self.results.succeeded(cmd.file)
+            else:
+                self.results.error(cmd.file, cmd.error)
+            return cmd
+
+        with ThreadPoolExecutor(max_workers=self._kwargs.get('job', 1)) as pool:
+            return pool.map(exec_cmd, self._cmds)
 
     def execCommand(self, cmd_name, **kwargs):
         cmd = self._createCmd(cmd_name,
@@ -67,11 +98,9 @@ class Builder:
         if not cmd:
             print('* fail to create command:', cmd_name, kwargs['sources'])
             return
-        logger.debug('cmdline: ' + cmd.getCmdLine())
-        if kwargs.get('dryrun', False):
-            return
         cmd.execute()
         return cmd
+
 
     def _createCmd(self, cmd_name, **kwargs):
         for interpreter in self.interpreters:
@@ -82,3 +111,4 @@ class Builder:
                            *entry[1:],  # extra args from command provider
                            name=cmd_name, executable=entry[0],
                            **kwargs)
+
