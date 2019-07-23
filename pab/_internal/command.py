@@ -34,7 +34,6 @@ class Command(dict):
         self.build_title = kwargs.get('build_title')
         self._interp = interpreter
         self._kwargs = kwargs
-        print('?', kwargs.get('dryrun'))
 
         self.success = False
         self.retcode = 0

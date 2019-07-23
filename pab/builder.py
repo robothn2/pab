@@ -2,7 +2,7 @@
 from concurrent.futures import ThreadPoolExecutor
 from ._internal.command import Command
 from ._internal.results import Results
-from .host_os.bin_utils import BinUtils
+from .interpreter.bin_utils import BinUtils
 from ._internal.log import logger
 
 

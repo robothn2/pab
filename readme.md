@@ -10,12 +10,10 @@
     from pab.android_ndk.ndk import NDK
 
     compiler = NDK(path='~/lib/android-ndk-r14b', platform=9, compiler='gcc', stl='llvm-libc++')
-    request = Request(target_os='android', target_cpu='armv7a',
-                      root_build='~/lib/build')
-    target = PabTargets(root='test/hello')
-    builder = Builder(request, compiler)
-    builder.build(target)
-
+    #compiler = MSVC(ver='14.0', platform='8.1')
+    request = Request(target_os='android', target_cpu='armv7a', root_build='~/lib/build')
+    builder = Builder(request, compiler, dryrun=True, job=10)
+    builder.build(PabTargets(root='test/base'))
 
 # BuildFlow
 * Compiler: NDK gcc/llvm, VisualC, IntelC, LLVM8.0
@@ -32,10 +30,10 @@
 # Todo
 * target script: support check_header, check_function
 * target script: support export_header, gen_header
-* support tracing source & history on variable
+* support tracing source & history on specified variable
 * suggestion on fails: header not found: search header file in system
 * suggestion on fails: unresolve referenced function: link to which lib
-* interactive build mode: pause build flow, can resume it too
+* interactive build mode: pause/resume build flow
 * parellel build mode: as possible as soon, exit on fails, cannot resume
 * generate ninja build script
 * generate visual studio project
