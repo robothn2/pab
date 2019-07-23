@@ -110,11 +110,12 @@ class Target:
 
             dst = os.path.join(self.request.rootBuild, file) + '.o'
             builder.poolCommand(
-                        detected.cmd, sources=src, dst=dst,
+                        detected.cmd, file=file, sources=src, dst=dst,
                         build_title=file, target=self, **kwargs)
 
         for cmd in builder.waitPoolComplete():
-            self.objs += cmd.dst
+            if cmd.succ:
+                self.objs += cmd.dst
         if len(self.objs) == 0:
             return
 
@@ -126,7 +127,7 @@ class Target:
             os.makedirs(dstfolder)
 
         cmd_name = 'ar' if self.isStaticLib() else 'ld'
-        logger.info('{} {}'.format(cmd_name, executable))
+        print(cmd_name, executable, ', totally', len(self.objs), 'objects')
         cmd = builder.execCommand(
                 cmd_name, sources=self.objs, dst=executable,
                 target=self, **kwargs)

@@ -72,6 +72,8 @@ class MSVC:
                          '/nologo', '/TP', '/c'),
                 'rc':   (os.path.join(self.sdk.rootBin, 'rc.exe'),
                          '/nologo'),
+                'asm':  (os.path.join(self.root, r'vc\bin\ml.exe'),
+                         '/nologo', '/c'),
                 'ar':   (os.path.join(self.root, r'vc\bin\lib.exe'),
                          '/nologo'),
                 'ld':   (os.path.join(self.root, r'vc\bin\link.exe'),
@@ -147,6 +149,9 @@ class MSVC:
 
         elif cmd.name == 'ar':
             cmd += '/OUT:"%s"' % kwargs['dst']
+
+        elif cmd.name == 'asm':
+            cmd += '/Fo "%s"' % kwargs['dst']
 
         elif cmd.name == 'ld':
             # $VSROOT\VC\bin\amd64_x86\link.exe /OUT:"build/myprj.exe" /NOLOGO /LIBPATH:..\..\prebuild\Release gbase.libkernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"build/myprj.pdb" /SUBSYSTEM:CONSOLE,"5.01" /LARGEADDRESSAWARE /DYNAMICBASE /NXCOMPAT /IMPLIB:"build/myprj.lib" /MACHINE:X86 /SAFESEH build/*.obj

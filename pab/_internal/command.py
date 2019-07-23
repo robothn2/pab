@@ -135,7 +135,7 @@ class Command(dict):
         #   double quote `"`
         cmdline = self._getCmdLine()
         if self.build_total > 1 and self.build_title:
-            logger.info('{:>3}/{} {} {}'.format(self.build_index,
+            print('{:>3}/{} {} {}'.format(self.build_index,
                         self.build_total, self.name, self.build_title))
         logger.debug('cmdline: ' + cmdline)
 
