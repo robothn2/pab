@@ -1,4 +1,5 @@
 # coding: utf-8
+from threading import Lock
 from concurrent.futures import ThreadPoolExecutor
 from ._internal.command import Command
 from ._internal.results import Results
@@ -14,8 +15,10 @@ class Builder:
         self.results = Results()
         self.configs = []
         self.interpreters = []
+        self.compiler = None
         self._cmds = []
         self.binutils = BinUtils(suffix=request.hostOS.getExecutableSuffix())
+        self.lockPoolOut = Lock()
 
     def _collect_available_configs(self):
         self.configs = []
@@ -47,10 +50,13 @@ class Builder:
         for cfg in self.configs:
             if hasattr(cfg, 'asCmdProvider'):
                 self.interpreters.append(cfg)
+                if hasattr(cfg, 'tags'):
+                    self.compiler = cfg
         logger.info('Enabled configs: {}'.format(
                 [cfg.name for cfg in self.configs]))
         logger.info('Interpreters: {}'.format(
                 [cfg.name for cfg in self.interpreters]))
+        logger.info('Compiler: {}'.format(self.compiler.tags))
 
     def build(self, targets):
         self._collect_available_configs()
@@ -79,17 +85,19 @@ class Builder:
             cmd.build_index = i + 1
             cmd.build_total = total
 
-        def exec_cmd(cmd):
+        def exec_one_cmd(cmd):
             cmd.execute()
 
+            #self.lockPoolOut.acquire()
             if cmd.success:
                 self.results.succeeded(cmd.file)
             else:
                 self.results.error(cmd.file, cmd.error)
+            #self.lockPoolOut.release()
             return cmd
 
         with ThreadPoolExecutor(max_workers=self._kwargs.get('job', 1)) as pool:
-            results = pool.map(exec_cmd, self._cmds)
+            results = pool.map(exec_one_cmd, self._cmds)
             self._cmds = []
             return results
 
@@ -103,14 +111,12 @@ class Builder:
         cmd.execute()
         return cmd
 
-
     def _createCmd(self, cmd_name, **kwargs):
         for interpreter in self.interpreters:
-            entry = interpreter.asCmdProvider().get(cmd_name)
+            entry = interpreter.asCmdProvider(kwargs).get(cmd_name)
             if not entry:
                 continue
             return Command(interpreter,
                            *entry[1:],  # extra args from command provider
                            name=cmd_name, executable=entry[0],
                            **kwargs)
-

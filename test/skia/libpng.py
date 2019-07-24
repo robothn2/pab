@@ -1,9 +1,9 @@
 # coding: utf-8
 
-libpng = {
+libpng_lib = {
     'uri': '//third_party/libpng',
     'type': 'sharedLib',
-    'source_base_dir': 'd:/lib/chromium/third_party/libpng',
+    'source_base_dir': 'third_party/libpng',
     'public_include_dirs': [
         ".",
         "libpng",
@@ -12,11 +12,8 @@ libpng = {
     'defines': [
         "PNG_SET_OPTION_SUPPORTED"
         ],
-    'cxxflags': [
-        '-std=c++11',
-        ],
     'deps': [
-        "//third_party/zlib",
+        '//third_party/zlib',
         ],
     'sources': [
         "png.c",
@@ -35,22 +32,16 @@ libpng = {
         "pngwtran.c",
         "pngwutil.c",
         ],
-    'libs': [
-        'c', 'z',
-        ],
 }
 
 
-def libpng_apply(lib, context):
-    target_os = context.target_os
-    if target_os == "android":
-        lib.defines += [
-            'TEST_DEFINE',
-            ]
-        lib.sources += [
-            ]
+def libpng_dyn(lib, context):
+    target_os = context.target_os_tags
+    if 'android' in target_os:
+        lib.defines += []
+        lib.sources += []
 
 
 export_libs = [
-    (libpng, libpng_apply),
+    (libpng_lib, libpng_dyn),
 ]

@@ -10,5 +10,5 @@ class BinUtils:
                 'file': ('file' + self.suffix, ),  # C:\msys64\usr\bin
                 }
 
-    def asCmdProvider(self):
+    def asCmdProvider(self, kwargs):
         return self._cmds

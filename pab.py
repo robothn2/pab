@@ -25,10 +25,10 @@ if __name__ == '__main__':
         log_to_file.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s"))
         logger.addHandler(log_to_file)
 
-    compiler = MSVC(ver='14.0', platform='8.1')
+    compiler = MSVC(ver='14.0', platform='7.1')
     #compiler = NDK(path='d:/lib/android-ndk-r14b', platform=9, compiler='gcc',
     #               stl='llvm-libc++')  # 'gnu-libstdc++', 'llvm-libc++'
-    request = Request(target_os='win', target_cpu='x86',
-                      root_build='D:/lib/build')
-    builder = Builder(request, compiler, dryrun=True, job=10)
-    builder.build(PabTargets(root='test/lyra'))
+    request = Request(target_os='win', target_cpu='x64',
+                      root_build='D:/build')
+    builder = Builder(request, compiler, dryrun=False, job=10)
+    builder.build(PabTargets(root='test/skia', root_source='d:/src/pca_infra/thirdparty-source/skia'))

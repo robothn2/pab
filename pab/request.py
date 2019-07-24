@@ -1,7 +1,7 @@
 # coding: utf-8
 
 import os
-from ._internal.arch import arch_detect, os_detect, os_get_tags
+from ._internal.arch import arch_detect, os_detect, os_get_tags, cpu_get_tags
 from ._internal.os import OS
 from ._internal.log import logger
 
@@ -17,12 +17,14 @@ class Request:
         self.arch = arch[0]
         self.target_cpu = arch[1]
         self.kwargs['target_os_tags'] = os_get_tags(self.target_os)
+        self.kwargs['target_cpu_tags'] = cpu_get_tags(self.target_cpu)
         self.rootBuild = os.path.realpath(kwargs['root_build'])
         if not os.path.exists(self.rootBuild):
             os.makedirs(self.rootBuild)
         logger.info('Request: {} {}'.format(
                 self.target_os, self.target_cpu))
         logger.info('OSTags: {}'.format(self.kwargs['target_os_tags']))
+        logger.info('CpuTags: {}'.format(self.kwargs['target_cpu_tags']))
 
     def hasMember(self, memberName):
         return memberName in self.kwargs

@@ -10,22 +10,24 @@ from .log import logger
 
 
 class Target:
-    def __init__(self, tar, request, *deps, **kwargs):
-        if isinstance(tar, tuple):
-            init_setting = tar[0]
-            self.dyn_setting = tar[1]
+    def __init__(self, tar_def, request, *deps, **kwargs):
+        if isinstance(tar_def, tuple):
+            init_setting = tar_def[0]
+            self.dyn_setting = tar_def[1]
         else:
-            init_setting = tar
+            init_setting = tar_def
             self.dyn_setting = None
         base = init_setting.get('source_base_dir')
         if not os.path.isabs(base):
-            base = os.path.realpath(os.path.join(kwargs['root'], base))
+            root_base = kwargs.get('root_source') or kwargs.get('root')
+            assert(root_base)
+            base = os.path.realpath(os.path.join(root_base, base))
             init_setting['source_base_dir'] = base
 
         self.request = request
-        self.setting = TargetContext(**init_setting, **request.kwargs)
+        self.setting = TargetContext(**init_setting, **request.kwargs, **kwargs)
         self.uri = self.setting['uri']
-        self.type = self.setting.get('type', 'staticLib')
+        self.type = self.setting.get('type')
         self.name = re.split(r'[./\\]', self.uri)[-1]
         self.rootSource = base
         self.objs = ItemList(name='objs')
@@ -72,9 +74,8 @@ class Target:
             cmd.libs += self.setting.libs
 
     def build(self, builder, **kwargs):
-        logger.info('== Target: {}, type: {}, base: {}'.format(
+        print('== Target: {}, type: {}, base: {}'.format(
                 self.uri, self.type, self.rootSource))
-        # logger.debug('Setting init: ' + str(self.setting))
         if self.dyn_setting:
             self.dyn_setting(self.setting, self.setting)
         # logger.debug('Setting apply: ' + str(self.setting))

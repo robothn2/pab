@@ -34,8 +34,6 @@
 * suggestion on fails: header not found: search header file in system
 * suggestion on fails: unresolve referenced function: link to which lib
 * interactive build mode: pause/resume build flow
-* parellel build mode: as possible as soon, exit on fails, cannot resume
 * generate ninja build script
 * generate visual studio project
 * generate xcode project
-

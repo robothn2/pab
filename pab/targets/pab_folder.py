@@ -8,14 +8,15 @@ from pab._internal.log import logger
 
 class PabTargets:
     def __init__(self, **kwargs):
-        self.kwargs = kwargs
         self.parsedTargets = {}
         self.completedTargets = {}
 
         root = os.path.realpath(kwargs['root'])
+        kwargs['root'] = root
         assert(os.path.exists(root))
         self.name = 'PabTargets(%s)' % root
         self.root = root
+        self.kwargs = kwargs
         self._parse_pyfiles(root)
 
     def __str__(self):
@@ -96,10 +97,12 @@ class PabTargets:
 
         logger.info('= Build: ' + self.name)
         for tar in sortedTars:
-            target = Target(tar, request, root=self.root)
+            target = Target(tar, request,
+                            **self.kwargs,
+                            compiler_tags=builder.compiler.tags)
 
             builder.configs.append(target)
-            target.build(builder, **self.kwargs, **kwargs)
+            target.build(builder, **kwargs)
             builder.configs.remove(target)
 
             self.completedTargets[target.uri] = target
@@ -122,6 +125,7 @@ class PabTargets:
                 dep = self.completedTargets.get(dep_name)
                 if not dep:
                     continue
+                cmd.defines += dep.setting.public_defines
                 cmd.include_dirs += dep.rebasePath(
                         dep.setting.public_include_dirs)
 
@@ -129,7 +133,10 @@ class PabTargets:
             # provide deps.artifacts for link
             for dep_name in target.getDepends():
                 dep = self.completedTargets.get(dep_name)
-                if not dep or not dep.artifacts:
+                if not dep:
                     continue
-                print(dep.artifacts)
+                cmd.lib_dirs += dep.rebasePath(dep.setting.public_lib_dirs)
+                cmd.libs += dep.rebasePath(dep.setting.public_libs)
+                if not dep.artifacts:
+                    continue
                 cmd.sources += dep.artifacts['link']

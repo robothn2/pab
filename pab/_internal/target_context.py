@@ -7,9 +7,13 @@ class TargetContext(dict):
     def __init__(self, *args, **kwargs):
         dict.__init__({})
         self['options'] = {}
-        vars_normal = ['defines', 'public_include_dirs', 'include_dirs',
-                       'headers', 'sysroots', 'ccflags', 'cxxflags', 'ldflags',
-                       'lib_dirs', 'libs', 'deps', 'configs',
+        vars_normal = ['defines', 'public_defines',
+                       'include_dirs', 'public_include_dirs',
+                       'lib_dirs', 'public_lib_dirs',
+                       'libs', 'public_libs',
+                       'headers', 'sysroots',
+                       'ccflags', 'cxxflags', 'arflags', 'ldflags',
+                       'deps', 'configs',
                        ]
         vars_pattern = ['public_headers', 'sources']  # support pattern add/sub
         for v in vars_normal:

@@ -117,7 +117,10 @@ def os_detect(osname):
     return ArchDetect(osname).target_os
 
 def os_get_tags(osname):
-    return _os_tags.get(osname, [])
+    return _os_tags.get(osname, ())
+
+def cpu_get_tags(cpuname):
+    return (cpuname, )
 
 if __name__ == '__main__':
     d = arch_detect('files/file_path_watcher_win.cc')

@@ -32,6 +32,7 @@ import os
 class Clang:
     def __init__(self, **kwargs):
         self.name = 'clang'
+        self.tags = ('clang', )
         self.kwargs = kwargs
         self.suffix = kwargs.get('suffix', '')
         self.prefix = kwargs.get('prefix', '')
@@ -58,7 +59,7 @@ class Clang:
         self.target_triple = request.target_cpu + '-' + request.target_os
         return True
 
-    def asCmdProvider(self):
+    def asCmdProvider(self, kwargs):
         return self._cmds
 
     def asCmdInterpreter(self):

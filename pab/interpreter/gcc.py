@@ -4,6 +4,7 @@
 class GCC:
     def __init__(self, **kwargs):
         self.name = 'GCC'
+        self.tags = ('gcc', 'gnuc', 'g++')
         self.kwargs = kwargs
         self.prefix = kwargs.get('prefix', '')
         self.suffix = kwargs.get('suffix', '')
@@ -26,7 +27,7 @@ class GCC:
     def matchRequest(self, request):
         return True
 
-    def asCmdProvider(self):
+    def asCmdProvider(self, kwargs):
         return self._cmds
 
     def asCmdInterpreter(self):

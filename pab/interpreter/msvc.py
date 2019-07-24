@@ -6,33 +6,40 @@ from pab._internal.target_utils import ItemList
 
 class WinSDK:
     def __init__(self, ver, **kwargs):
-        self.include_dirs = ItemList(name='include_dirs')
-        self.lib_dirs = {'x86': ItemList(name='x86'), 'x64': ItemList(name='x64')}
-        self.static_libs = {'x86': ItemList(name='x86'), 'x64': ItemList(name='x64')}
-        self.shared_libs = {'x86': ItemList(name='x86'), 'x64': ItemList(name='x64')}
+        self.rootBin = {}
+        self.lib_dirs = {}
+        self.static_libs = {}
+        self.shared_libs = {}
+        for arch in ('x86', 'x64', 'arm', 'arm64'):
+            self.lib_dirs[arch] = ItemList(name=arch)
+            self.static_libs[arch] = ItemList(name=arch)
+            self.shared_libs[arch] = ItemList(name=arch)
         self.defines = ItemList(name='defines')
+        self.include_dirs = ItemList(name='include_dirs')
         self.ldflags = ItemList(name='ldflags')
 
         if not ver or ver == '8.1':
             root = r'C:\Program Files (x86)\Windows Kits\8.1'
-            self.rootBin = os.path.join(root, r'bin')
+            rootLib = os.path.join(root, r'Lib\winv6.3')
+            for arch in ('x86', 'x64', 'arm'):
+                self.rootBin[arch] = os.path.join(root, 'bin', arch)
+                self.lib_dirs[arch] += os.path.join(rootLib, 'um', arch)
+
             self.include_dirs += [
                     os.path.join(root, r'include'),
                     os.path.join(root, r'include\um'),
                     os.path.join(root, r'include\shared'),
                     ]
 
-            root = os.path.join(root, r'Lib\winv6.3')
-            self.lib_dirs['x86'] += os.path.join(root, r'um\x86')
-            self.lib_dirs['x64'] += os.path.join(root, r'um\x64')
             self._use_sdk_10('10.0.10240.0')  # for corecrt.h
 
         elif ver == '7.1':
             root = r'C:\Program Files (x86)\Microsoft SDKs\Windows\v7.1A'
-            self.rootBin = os.path.join(root, r'bin')
-            self.include_dirs += os.path.join(root, 'include')
+            self.rootBin['x86'] = os.path.join(root, r'bin')
+            self.rootBin['x64'] = os.path.join(root, r'bin\x64')
             self.lib_dirs['x86'] += os.path.join(root, 'lib')
             self.lib_dirs['x64'] += os.path.join(root, r'lib\x64')
+            self.include_dirs += os.path.join(root, 'include')
             self._use_sdk_10('10.0.10240.0')  # for corecrt.h
             self.defines += '_USING_V110_SDK71_'
             self.ldflags += '/SUBSYSTEM:CONSOLE",5.01"'
@@ -42,26 +49,24 @@ class WinSDK:
 
     def _use_sdk_10(self, ver):
         root = r'C:\Program Files (x86)\Windows Kits\10'
-        self.rootBin = os.path.join(root, r'bin\x64')
+        for arch in ('x86', 'x64', 'arm', 'arm64'):
+            self.rootBin[arch] = os.path.join(root, 'bin', arch)
+            self.lib_dirs[arch] += [
+                    os.path.join(root, 'lib', ver, 'ucrt', arch),
+                    os.path.join(root, 'lib', ver, 'um', arch),
+                    ]
+
         self.include_dirs += [
                 os.path.join(root, fr'Include\{ver}\ucrt'),
                 os.path.join(root, fr'Include\{ver}\um'),
                 os.path.join(root, fr'Include\{ver}\shared'),
                 ]
 
-        self.lib_dirs['x86'] += [
-                os.path.join(root, fr'Lib\{ver}\ucrt\x86'),
-                os.path.join(root, fr'Lib\{ver}\um\x86'),
-                ]
-        self.lib_dirs['x64'] += [
-                os.path.join(root, fr'Lib\{ver}\ucrt\x64'),
-                os.path.join(root, fr'Lib\{ver}\um\x64'),
-                ]
-
 
 class MSVC:
     def __init__(self, **kwargs):
         self.name = 'MSVC'
+        self.tags = ('msvc', 'vc')
         self.kwargs = kwargs
         # Get install path of vs2015:
         ver = kwargs.get('ver', '14.0')
@@ -70,20 +75,28 @@ class MSVC:
             raise Exception('Invalid vs dir: %s' % self.root)
 
         self.sdk = WinSDK(kwargs.get('platform'))
-        self._cmds = {
-                'cc':   (os.path.join(self.root, r'vc\bin\cl.exe'),
-                         '/nologo', '/TC', '/c'),
-                'cxx':  (os.path.join(self.root, r'vc\bin\cl.exe'),
-                         '/nologo', '/TP', '/c'),
-                'rc':   (os.path.join(self.sdk.rootBin, 'rc.exe'),
-                         '/nologo'),
-                'asm':  (os.path.join(self.root, r'vc\bin\ml.exe'),
-                         '/nologo', '/c'),
-                'ar':   (os.path.join(self.root, r'vc\bin\lib.exe'),
-                         '/nologo'),
-                'ld':   (os.path.join(self.root, r'vc\bin\link.exe'),
-                         '/nologo'),
-                }
+        self._cmds = {}
+        for arch in ('x86', 'x64', 'arm', 'arm64'):
+            root_bin = self._search_arch_root(arch)
+            if not root_bin:
+                continue
+            self._cmds[arch] = {
+                    'cc':   (os.path.join(root_bin, 'cl.exe'),
+                             '/nologo', '/TC', '/c'),
+                    'cxx':  (os.path.join(root_bin, 'cl.exe'),
+                             '/nologo', '/TP', '/c'),
+                    'rc':   (os.path.join(self.sdk.rootBin[arch], 'rc.exe'),
+                             '/nologo'),
+                    'asm':  (os.path.join(root_bin, 'ml.exe'),
+                             '/nologo', '/c'),
+                    'ar':   (os.path.join(root_bin, 'lib.exe'),
+                             '/nologo'),
+                    'ld':   (os.path.join(root_bin, 'link.exe'),
+                             '/nologo'),
+                    }
+        print('?', self._cmds)
+        self._cmds['x86_64'] = self._cmds['x64']  # alias
+
         self._compositors = {
                 'sysroots':      lambda path, args: f'/I"{path}"',
                 'include_dirs':  lambda path, args: f'/I"{path}"',
@@ -92,14 +105,28 @@ class MSVC:
                 'defines':       lambda macro, args: f'/D "{macro}"',
                 }
 
+    def _search_arch_root(self, arch):
+        search_order = {
+                'x86': (r'vc\bin\amd64_x86', r'vc\bin'),
+                'x64': (r'vc\bin\amd64', r'vc\bin\x86_amd64'),
+                'arm': (r'vc\bin\amd64_arm', r'vc\bin\x86_arm', r'vc\bin\arm'),
+                'arm64': (r'vc\bin\arm64', ),
+                }
+        for sub_path in search_order[arch]:
+            path_bin = os.path.join(self.root, sub_path)
+            path_cl = os.path.join(path_bin, 'cl.exe')
+            if os.path.exists(path_cl):
+                return path_bin
+            print('?', arch, 'path:', path_bin, 'not exist')
+
     def __str__(self):
         return self.name
 
     def matchRequest(self, request):
         return True
 
-    def asCmdProvider(self):
-        return self._cmds
+    def asCmdProvider(self, kwargs):
+        return self._cmds[kwargs['request'].arch]
 
     def asCmdInterpreter(self):
         return self._compositors
@@ -137,7 +164,7 @@ class MSVC:
                     flags += '/MT'
                 else:
                     flags += '/MD'
-            flags += '/Zi'
+            #flags += '/Zi' '/PDB:"target.pdb"',
 
             cmd += '/Fo:"%s"' % kwargs['dst']
 
@@ -209,4 +236,4 @@ class MSVC:
                 cmd.artifacts['pdb'] = dst_pdb
 
             # '/MANIFEST', '''/MANIFESTUAC:"level='asInvoker' uiAccess='false'"''', '/manifest:embed',
-            # '/DEBUG', '/Zi', '/PDB:"target.pdb"',
+            # '/DEBUG'
