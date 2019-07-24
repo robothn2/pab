@@ -10,6 +10,8 @@ class WinSDK:
         self.lib_dirs = {'x86': ItemList(name='x86'), 'x64': ItemList(name='x64')}
         self.static_libs = {'x86': ItemList(name='x86'), 'x64': ItemList(name='x64')}
         self.shared_libs = {'x86': ItemList(name='x86'), 'x64': ItemList(name='x64')}
+        self.defines = ItemList(name='defines')
+        self.ldflags = ItemList(name='ldflags')
 
         if not ver or ver == '8.1':
             root = r'C:\Program Files (x86)\Windows Kits\8.1'
@@ -31,6 +33,9 @@ class WinSDK:
             self.include_dirs += os.path.join(root, 'include')
             self.lib_dirs['x86'] += os.path.join(root, 'lib')
             self.lib_dirs['x64'] += os.path.join(root, r'lib\x64')
+            self._use_sdk_10('10.0.10240.0')  # for corecrt.h
+            self.defines += '_USING_V110_SDK71_'
+            self.ldflags += '/SUBSYSTEM:CONSOLE",5.01"'
 
         elif re.match(r'10\.\d+\.\d+\.\d+', ver):
             self._use_sdk_10(ver)
@@ -107,12 +112,12 @@ class MSVC:
             flags = cmd.get(cmd.name + 'flags')
             if cmd.name == 'cxx':
                 flags += '/EHsc'  # enable c++ execption
-            flags += ['/Gm-',  # disable minimalest rebuild
+            flags += ['/Gm-',  # disable minimal rebuild
                       '/GS',   # 启用安全检查，检测堆栈缓冲区溢出
                       '/fp:precise', # 浮点模型: 精度
                       '/Zc:wchar_t', # treat wchar_t as internal type
                       '/Zc:forScope',# for variables only available in for loop
-                      '/Zc:inline',  # 编译器不再为未引用的代码和数据生成符号信息
+                      '/Zc:inline',
                       '/W3', '/WX-', '/wd4819',  # warnings
                       '/Od',  # optimization level: /Od = disable, /O1~3
                       '/Oy-', # Omit frame pointer: /Oy- = disable
@@ -140,6 +145,7 @@ class MSVC:
                     os.path.join(self.root, r'VC\atlmfc\include'),
                     ]
             cmd.include_dirs += self.sdk.include_dirs
+            cmd.defines += self.sdk.defines
 
         elif cmd.name == 'rc':
             # "C:\Program Files (x86)\Windows Kits/10/bin/x86/rc.exe" /nologo /l 0x804 /I"C:\Program Files (x86)\Windows Kits/10/Include/10.0.17134.0/um" /I"C:\Program Files (x86)\Windows Kits/10/Include/10.0.17134.0/shared" /Fo"d:\lyra.res" D:/src/lyra/lyra.rc
@@ -158,10 +164,10 @@ class MSVC:
             dst = kwargs['dst']
             cmd += f'/OUT:"{dst}"'
             cmd.ldflags += [
-                    '/SUBSYSTEM:CONSOLE,"5.01"',
                     '/LARGEADDRESSAWARE',
                     '/DYNAMICBASE', '/NXCOMPAT', '/SAFESEH',
                     ]
+            cmd.ldflags += self.sdk.ldflags
             cmd.libs += [
                     'kernel32.lib', 'user32.lib', 'gdi32.lib', 'advapi32.lib',
                     'shell32.lib', 'ole32.lib', 'oleaut32.lib', 'shell32.lib',

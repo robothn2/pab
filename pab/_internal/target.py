@@ -114,7 +114,7 @@ class Target:
                         build_title=file, target=self, **kwargs)
 
         for cmd in builder.waitPoolComplete():
-            if cmd.succ:
+            if cmd.success:
                 self.objs += cmd.dst
         if len(self.objs) == 0:
             return
@@ -127,7 +127,7 @@ class Target:
             os.makedirs(dstfolder)
 
         cmd_name = 'ar' if self.isStaticLib() else 'ld'
-        print(cmd_name, executable, ', totally', len(self.objs), 'objects')
+        print(cmd_name, executable, 'totally', len(self.objs), 'objects')
         cmd = builder.execCommand(
                 cmd_name, sources=self.objs, dst=executable,
                 target=self, **kwargs)

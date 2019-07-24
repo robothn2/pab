@@ -89,7 +89,9 @@ class Builder:
             return cmd
 
         with ThreadPoolExecutor(max_workers=self._kwargs.get('job', 1)) as pool:
-            return pool.map(exec_cmd, self._cmds)
+            results = pool.map(exec_cmd, self._cmds)
+            self._cmds = []
+            return results
 
     def execCommand(self, cmd_name, **kwargs):
         cmd = self._createCmd(cmd_name,
