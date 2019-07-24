@@ -39,7 +39,7 @@ class Command(dict):
         self.retcode = 0
         self.output = ''
         self.error = ''
-        self.artifacts = []
+        self.artifacts = {}
 
         self._front_cmds = [kwargs['executable']]  # executable must be first element
         for arg in extra_args:
@@ -138,7 +138,7 @@ class Command(dict):
             print('{:>3}/{} {} {}'.format(self.build_index,
                         self.build_total, self.name, self.build_title))
         logger.debug('cmdline: ' + cmdline)
-
+        self.artifacts['o'] = self.dst
         if self._kwargs.get('dryrun', False):
             self.success = True
             return
@@ -150,7 +150,6 @@ class Command(dict):
             self.success = False
         else:
             self.success = True
-            self.artifacts.append(self.dst)
         return self.success
 
     def _getCmdLine(self):

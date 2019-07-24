@@ -137,6 +137,7 @@ class MSVC:
                     flags += '/MT'
                 else:
                     flags += '/MD'
+            flags += '/Zi'
 
             cmd += '/Fo:"%s"' % kwargs['dst']
 
@@ -153,14 +154,17 @@ class MSVC:
             cmd += '/Fo"%s"' % kwargs['dst']  # Notice: no ':'
             cmd.include_dirs += self.sdk.include_dirs  # for winres.h
 
-        elif cmd.name == 'ar':
-            cmd += '/OUT:"%s"' % kwargs['dst']
-
         elif cmd.name == 'asm':
             cmd += '/Fo "%s"' % kwargs['dst']
 
+        elif cmd.name == 'ar':
+            dst = kwargs['dst']
+            cmd += f'/OUT:"{dst}"'
+            cmd.ldflags += '/DEBUG'
+            cmd.artifacts['link'] = dst
+
         elif cmd.name == 'ld':
-            # $VSROOT\VC\bin\amd64_x86\link.exe /OUT:"build/myprj.exe" /NOLOGO /LIBPATH:..\..\prebuild\Release gbase.libkernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"build/myprj.pdb" /SUBSYSTEM:CONSOLE,"5.01" /LARGEADDRESSAWARE /DYNAMICBASE /NXCOMPAT /IMPLIB:"build/myprj.lib" /MACHINE:X86 /SAFESEH build/*.obj
+            # $VSROOT\VC\bin\amd64_x86\link.exe /OUT:"build/myprj.exe" /NOLOGO /LIBPATH:..\..\prebuild\Release gbase.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"build/myprj.pdb" /SUBSYSTEM:CONSOLE,"5.01" /LARGEADDRESSAWARE /DYNAMICBASE /NXCOMPAT /IMPLIB:"build/myprj.lib" /MACHINE:X86 /SAFESEH build/*.obj
             dst = kwargs['dst']
             cmd += f'/OUT:"{dst}"'
             cmd.ldflags += [
@@ -192,10 +196,17 @@ class MSVC:
                         ]
                 cmd.lib_dirs += self.sdk.lib_dirs['x86']
 
-            if kwargs['target'].isSharedLib():
-                cmd.ldflags += '/DLL'
-                lib_dst = os.path.splitext(dst)[0] + '.lib'
-                cmd.ldflags += f'/IMPLIB:"{lib_dst}"'
-                cmd.artifacts.insert(0, lib_dst)
+            target = kwargs['target']
+            if target.isSharedLib():
+                dst_base = os.path.splitext(dst)[0]
+                dst_lib = dst_base + '.lib'
+                dst_pdb = dst_base + '.pdb'
+                cmd.ldflags += ['/DLL', '/DEBUG']
+                cmd.ldflags += f'/IMPLIB:"{dst_lib}"'
+                cmd.ldflags += f'/PDB:"{dst_pdb}"'
+                cmd.artifacts['so'] = dst
+                cmd.artifacts['link'] = dst_lib
+                cmd.artifacts['pdb'] = dst_pdb
+
             # '/MANIFEST', '''/MANIFESTUAC:"level='asInvoker' uiAccess='false'"''', '/manifest:embed',
             # '/DEBUG', '/Zi', '/PDB:"target.pdb"',

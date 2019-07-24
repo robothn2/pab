@@ -126,9 +126,10 @@ class PabTargets:
                         dep.setting.public_include_dirs)
 
         elif cmd.name == 'ld':
-            # provide deps.artifact for link
+            # provide deps.artifacts for link
             for dep_name in target.getDepends():
                 dep = self.completedTargets.get(dep_name)
-                if not dep or not dep.artifact:
+                if not dep or not dep.artifacts:
                     continue
-                cmd.sources += dep.artifact
+                print(dep.artifacts)
+                cmd.sources += dep.artifacts['link']

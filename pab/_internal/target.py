@@ -29,7 +29,7 @@ class Target:
         self.name = re.split(r'[./\\]', self.uri)[-1]
         self.rootSource = base
         self.objs = ItemList(name='objs')
-        self.artifact = None
+        self.artifacts = {}
 
     def __str__(self):
         return self.uri
@@ -82,6 +82,7 @@ class Target:
         if not self.isArtifact():
             return
 
+        # compile all sources
         created_dst_folders = []
         sources = self.setting.get('sources', [])
         for file in sources:
@@ -119,13 +120,13 @@ class Target:
         if len(self.objs) == 0:
             return
 
+        # generate artifact
         executable = os.path.join(
                 self.request.rootBuild, 'lib',
                 self.request.targetOS.getFullName(self.name, self.type))
         dstfolder = os.path.dirname(executable)
         if not os.path.exists(dstfolder):
             os.makedirs(dstfolder)
-
         cmd_name = 'ar' if self.isStaticLib() else 'ld'
         print(cmd_name, executable, 'totally', len(self.objs), 'objects')
         cmd = builder.execCommand(
@@ -135,10 +136,11 @@ class Target:
             builder.results.error(file, cmd.error)
             return
 
-        self.artifact = cmd.artifacts[0]
-        builder.results.succeeded(self.artifact)
-        cmd = builder.execCommand('file', sources=self.artifact)
-        logger.info(cmd.output)
+        # check artifact
+        self.artifacts = cmd.artifacts
+        builder.results.succeeded(self.artifacts['o'])
+        cmd = builder.execCommand('file', sources=self.artifacts['o'])
+        print('artifact:', cmd.output)
 
         # copy public headers to $BUILD
         for header_file in self.setting.public_headers:
