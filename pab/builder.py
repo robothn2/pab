@@ -17,7 +17,7 @@ class Builder:
         self.interpreters = []
         self.compiler = None
         self._cmds = []
-        self.binutils = BinUtils(suffix=request.hostOS.getExecutableSuffix())
+        self.binutils = BinUtils(suffix=request.host_os.getExecutableSuffix())
         self.lockPoolOut = Lock()
 
     def _collect_available_configs(self):

@@ -94,7 +94,7 @@ class MSVC:
                     'ld':   (os.path.join(root_bin, 'link.exe'),
                              '/nologo'),
                     }
-        print('?', self._cmds)
+        #print('?', self._cmds)
         self._cmds['x86_64'] = self._cmds['x64']  # alias
 
         self._compositors = {
@@ -107,7 +107,7 @@ class MSVC:
 
     def _search_arch_root(self, arch):
         search_order = {
-                'x86': (r'vc\bin\amd64_x86', r'vc\bin'),
+                'x86': (r'vc\bin', r'vc\bin\amd64_x86'),
                 'x64': (r'vc\bin\amd64', r'vc\bin\x86_amd64'),
                 'arm': (r'vc\bin\amd64_arm', r'vc\bin\x86_arm', r'vc\bin\arm'),
                 'arm64': (r'vc\bin\arm64', ),
@@ -117,7 +117,7 @@ class MSVC:
             path_cl = os.path.join(path_bin, 'cl.exe')
             if os.path.exists(path_cl):
                 return path_bin
-            print('?', arch, 'path:', path_bin, 'not exist')
+            #print('?', arch, 'path:', path_bin, 'not exist')
 
     def __str__(self):
         return self.name
@@ -126,7 +126,7 @@ class MSVC:
         return True
 
     def asCmdProvider(self, kwargs):
-        return self._cmds[kwargs['request'].arch]
+        return self._cmds.get(kwargs['request'].arch.name, {})
 
     def asCmdInterpreter(self):
         return self._compositors
@@ -196,7 +196,7 @@ class MSVC:
             cmd += f'/OUT:"{dst}"'
             cmd.ldflags += [
                     '/LARGEADDRESSAWARE',
-                    '/DYNAMICBASE', '/NXCOMPAT', '/SAFESEH',
+                    '/DYNAMICBASE', '/NXCOMPAT',
                     ]
             cmd.ldflags += self.sdk.ldflags
             cmd.libs += [
@@ -208,7 +208,7 @@ class MSVC:
                     # 'psapi.lib', 'version.lib', 'winmm.lib',
                     ]
 
-            if kwargs.get('x64'):
+            if '64bit' in kwargs['request'].arch.tags:
                 cmd.ldflags += '/MACHINE:X64'
                 cmd.lib_dirs += [
                         os.path.join(self.root, r'VC\lib\amd64'),
@@ -216,7 +216,9 @@ class MSVC:
                         ]
                 cmd.lib_dirs += self.sdk.lib_dirs['x64']
             else:
-                cmd.ldflags += '/MACHINE:X86'
+                cmd.ldflags += ['/MACHINE:X86',
+                                '/SAFESEH',  # only available for x86
+                                ]
                 cmd.lib_dirs += [
                         os.path.join(self.root, r'VC\lib'),
                         os.path.join(self.root, r'VC\atlmfc\lib'),

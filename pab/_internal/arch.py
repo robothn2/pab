@@ -1,129 +1,72 @@
 # coding: utf-8
+import re
 
-import os
 
+def arch_detect(arch):
+    if re.match(r'^(?:arm-?v8-?).*', arch) or arch in ('aarch64', 'arm64'):
+        arch='aarch64'
+    elif re.match(r'^(?:arm|iPad|iPhone).*', arch):
+        arch='arm'
+    elif re.match(r'^i[3-6]86.*', arch) or arch in ('x86', 'x86_32', 'i86pc', 'BePC'):
+        arch='x86'
+    elif re.match(r'^(?:i[3-6]|x)86.*', arch) or arch in ('x64', 'x86_64', 'amd64'):
+        arch='x64'
+    elif re.match(r'^(?:mips|IP).*', arch):
+        arch='mips'
+        '''
+        if arch.endswith('el'):
+            add_cppflags -EL
+            add_ldflags -EL
+        elif arch.endswith('eb'):
+            add_cppflags -EB
+            add_ldflags -EB
+        '''
+    elif re.match(r'^(?:parisc|hppa).*', arch):
+        arch='parisc'
+    elif arch == 'Power Macintosh' or re.match(r'^(?:ppc|powerpc).*', arch):
+        arch='ppc'
+    elif re.match(r'^s390x?', arch):
+        arch='s390'
+    elif re.match(r'^sh4?', arch):
+        arch='sh4'
+    elif re.match(r'^(?:sun4|sparc).*', arch):
+        arch='sparc'
+    elif re.match(r'^tile-?gx', arch):
+        arch='tilegx'
+    else:
+        return None
+    return arch
 
-_ext_filters = {
-    'cc': ['.c'],
-    'cxx': ['.cpp', '.cc', '.cxx',
-            '.m', '.mm'  # xcode
-            ],
-    'as': ['.asm', '.S'],
-    'rc': ['.rc'],   # VS resource
+_arch_tags = {
+    'aarch64': ('arm', 'arm64', 'aarch64', '64bit'),
+    'arm': ('arm', 'armeabi', '32bit'),
+    'x86': ('x86', 'x86_32', 'i386', 'i686', 'intel', '32bit'),
+    'x64': ('x86', 'x86_64', 'x64', 'amd64', 'intel', '64bit'),
+    'mips': ('mips', 'mipsel', 'mipseb'),
+    'ppc': ('ppc', ),
+    'sh4': ('sh4', 'sh'),
+    'sparc': ('sparc', 'sun'),
+    'tilegx': ('tilegx',),
+    'parisc': ('parisc', 'hppa'),
+    's390': ('s390',),
 }
-_ext_map = {ext: cmd
-            for cmd in _ext_filters.keys()
-            for ext in _ext_filters[cmd]}  # map file extension to Command name
 
-_filetag_filters = [
-    ['linux', ],
-    ['android', ],
-    ['win', 'win32', 'windows', 'winnt'],
-    ['mac', 'macos', 'macosx', 'darwin', '.m', '.mm'],
-    ['ios', 'iphone', 'iphoneos', 'iphonesimulator'],
-]
-_os_map = {tag: osname[0]
-           for osname in _filetag_filters
-           for tag in osname}  # map file tag to OS name
+class Arch:
+    def __init__(self, handy_arch):
+        handy_arch = handy_arch.lower() if isinstance(handy_arch, str) else ''
+        self._arch_org = handy_arch
+        self.name = arch_detect(handy_arch)
+        assert(self.name)
+        self.tags = _arch_tags.get(self.name, ())
 
-_os_tags = {
-    'win': ['win', 'windows', 'win32', 'winnt', 'pc'],
-    'mac': ['mac', 'apple', 'macos', 'macosx', 'darwin', 'posix'],
-    'ios': ['ios', 'apple', 'iphone', 'ipad'],
-    'linux': ['linux', 'posix', ],
-    'android': ['android', 'linux', 'posix', ],
-}
-
-_archtag_filters = [
-    ['arm64', 'aarch64'],
-    ['arm', 'armv5te', 'armv7a', 'armeabi', 'armeabi-v7a'],
-    ['x86', 'x64', 'i386', 'i686'],
-    ['mips', 'mipsel', 'mipseb'],
-    ['ppc'],
-    ['sh4', 'sh'],
-    ['sparc'],
-]
-_arch_map = {tag: arch[0]
-             for arch in _archtag_filters
-             for tag in arch}  # map file tag to OS name
-
-_opt_tag_filters = [
-    ['asm', 'x86asm', 'inline-asm', ],
-    ['neon', 'vfp', 'armv5te', 'armv6', 'armv6t2', ],
-    ['fast-unaligned', 'vsx', 'msa', 'xop'],
-    ['fma3', 'fma4', 'aesni', ],
-    ['mmx', 'mmxext', 'sse', 'sse2', 'sse3', 'sse4', 'sse42', 'avx', 'avx2', 'avx512'],
-    ['altivec', 'amd3dnow', 'amd3dnowext', 'power8'],
-    ['mipsdsp', 'mipsdspr2', 'mipsfpu', ],
-]
-_optimize_map = {tag: opt[0]
-             for opt in _opt_tag_filters
-             for tag in opt}  # map file tag to OS name
-
-
-class ArchDetect:
-    def __init__(self, filepath):
-        self.tags = []
-        dirpath, filename = os.path.split(os.path.realpath(filepath))
-        if dirpath:
-            dirname = os.path.basename(dirpath)
-            self.tags.append(dirname)
-
-        name, ext = os.path.splitext(filename)
-        self.cmd = _ext_map.get(ext, None)
-        # todo: handle Camel naming rule
-        self.tags += name.lower().split('_')
-
-        self.target_os = None
-        self.arch = None
-        self.target_cpu = None
-        self.optimize = None
-        for tag in self.tags:
-            if not self.target_os:
-                self.target_os = _os_map.get(tag, None)
-            #if not self.optimize:
-            #    self.optimize = _optimize_map.get(tag, None)
-            if not self.arch:
-                self.arch = _arch_map.get(tag, None)
-
-    def __str__(self):
-        return '{} -> {}, {}, {}, {}'.format(self.tags,
-                self.cmd, self.target_os, self.arch, self.target_cpu)
-
-    def match(self, *args):
-        for cfg in args:
-            if hasattr(cfg, 'match') and cfg.match(self):
-                return (True, None)
-        return (False, 'OS(%s), CPU(%s) not match' % (self.target_os, self.target_cpu))
-
-def file_detect(filepath):
-    return ArchDetect(filepath)
-
-def arch_detect(arch_cpu):
-    arch_cpu = arch_cpu.replace('-', '')
-    if arch_cpu.startswith('arm'):
-        if arch_cpu in ['arm64', 'aarch64']:
-            return ('arm64', 'arm64')
-        elif arch_cpu.startswith('armv'):
-            return ('arm', arch_cpu)
-    elif arch_cpu.startswith('x'):
-        if arch_cpu in ['x86_64', 'x64']:
-            return ('x86_64', 'x86_64')
-        if arch_cpu in ['x86', 'x86_32']:
-            return ('x86', 'x86')
-    return None
-
-def os_detect(osname):
-    return ArchDetect(osname).target_os
-
-def os_get_tags(osname):
-    return _os_tags.get(osname, ())
-
-def cpu_get_tags(cpuname):
-    return (cpuname, )
 
 if __name__ == '__main__':
-    d = arch_detect('files/file_path_watcher_win.cc')
-    print(d)
-    d = arch_detect('mac/file_path.cc')
-    print(str(d))
+    assert(arch_detect('iPhone10') == 'arm')
+    assert(arch_detect('armv5te') == 'arm')
+    assert(arch_detect('armv8a') == 'aarch64')
+    assert(arch_detect('arm-v8a') == 'aarch64')
+    assert(arch_detect('i686') == 'x86')
+    assert(arch_detect('x86') == 'x86')
+    assert(arch_detect('x86_64') == 'x64')
+    assert(arch_detect('x64') == 'x64')
+    assert(arch_detect('mipsel') == 'mips')

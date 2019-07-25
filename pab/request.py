@@ -1,7 +1,7 @@
 # coding: utf-8
 
 import os
-from ._internal.arch import arch_detect, os_detect, os_get_tags, cpu_get_tags
+from ._internal.arch import Arch
 from ._internal.os import OS
 from ._internal.log import logger
 
@@ -10,21 +10,16 @@ class Request:
     def __init__(self, **kwargs):
         self.name = 'Request'
         self.kwargs = kwargs
-        self.hostOS = OS()
-        self.targetOS = OS(os_detect(kwargs['target_os']))
-        self.target_os = self.targetOS.name
-        arch = arch_detect(kwargs['target_cpu'])
-        self.arch = arch[0]
-        self.target_cpu = arch[1]
-        self.kwargs['target_os_tags'] = os_get_tags(self.target_os)
-        self.kwargs['target_cpu_tags'] = cpu_get_tags(self.target_cpu)
+        self.host_os = OS()
+        self.target_os = OS(kwargs['target_os'])
+        self.arch = Arch(kwargs['target_cpu'])
+        self.kwargs['target_os_tags'] = self.target_os.tags
+        self.kwargs['target_cpu_tags'] = self.arch.tags
         self.rootBuild = os.path.realpath(kwargs['root_build'])
         if not os.path.exists(self.rootBuild):
             os.makedirs(self.rootBuild)
-        logger.info('Request: {} {}'.format(
-                self.target_os, self.target_cpu))
-        logger.info('OSTags: {}'.format(self.kwargs['target_os_tags']))
-        logger.info('CpuTags: {}'.format(self.kwargs['target_cpu_tags']))
+        logger.info('OSTags: {}'.format(self.target_os.tags))
+        logger.info('ArchTags: {}'.format(self.arch.tags))
 
     def hasMember(self, memberName):
         return memberName in self.kwargs
@@ -32,12 +27,9 @@ class Request:
     def __getattr__(self, name):
         return self.kwargs.get(name)
 
-    def getTmpFile(self):
-        return
-
-    def match(self, file_detect):
-        if file_detect.arch and self.arch != file_detect.arch:
+    def match(self, file_detected):
+        if file_detected.arch and file_detected.arch == self.arch.name:
             return False
-        if file_detect.target_os and self.target_os != file_detect.target_os:
+        if file_detected.target_os and file_detected.target_os not in self.target_os.tags:
             return False
         return True

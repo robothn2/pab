@@ -85,13 +85,13 @@ class NDK:
 
         if self.kwargs.get('compiler', 'gcc') == 'gcc':
             gcc = GCC(prefix=os.path.join(rootBin, executablePrefix),
-                      suffix=request.hostOS.getExecutableSuffix())
+                      suffix=request.host_os.getExecutableSuffix())
             return True, [gcc]
 
         clang = Clang(prefix=os.path.join(
                 self.root,
                 'toolchains/llvm/prebuilt/windows-x86_64/bin'),
-                suffix=request.hostOS.getExecutableSuffix())
+                suffix=request.host_os.getExecutableSuffix())
         return True, [clang]
 
     def asCmdFilter(self, cmd, kwargs):

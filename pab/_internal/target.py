@@ -3,7 +3,7 @@
 import os
 import re
 import shutil
-from .arch import file_detect
+from .file_detect import file_detect
 from .target_context import TargetContext
 from .target_utils import ItemList
 from .log import logger
@@ -124,7 +124,7 @@ class Target:
         # generate artifact
         executable = os.path.join(
                 self.request.rootBuild, 'lib',
-                self.request.targetOS.getFullName(self.name, self.type))
+                self.request.target_os.getFullName(self.name, self.type))
         dstfolder = os.path.dirname(executable)
         if not os.path.exists(dstfolder):
             os.makedirs(dstfolder)
