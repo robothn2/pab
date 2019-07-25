@@ -24,9 +24,6 @@ class GCC:
                 'defines':       lambda macro, args: f'-D{macro}',
                 }
 
-    def matchRequest(self, request):
-        return True
-
     def asCmdProvider(self, kwargs):
         return self._cmds
 

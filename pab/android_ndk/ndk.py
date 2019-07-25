@@ -49,50 +49,50 @@ class NDK:
             raise Exception(r'Need ndk dir passed as `path` parameter,'
                             'or ndk dir in `PATH` environment')
 
-        self.rootStl = None
+        self.stl = None
         self.sysroot = None
-        self.libPaths = []
-        self.cmdFilters = {}
 
     def matchRequest(self, request):
         if 'android' not in request.target_os.tags:
-            return (False, 'target_os is not android')
+            return 'target_os is not android'
 
+    def initByRequest(self, request):
+        request.variables['ndk'] = self.root
         executablePrefix, toolchain_name = self.getToolchainName(request)
         # android-21+ support 64bit arch
         platform_level = self.kwargs.get('platform', 21)
         prebuilt = os.path.join(self.root,
                                 f'toolchains/{toolchain_name}/prebuilt')
         if not os.path.exists(prebuilt):
-            return (False, 'Ndk toolchain name not exist: %s' % prebuilt)
+            raise Exception('Ndk toolchain name not exist: %s' % prebuilt)
 
         rootBin = os.path.join(prebuilt, os.listdir(prebuilt)[0], 'bin')
         rootPlatform = os.path.join(self.root,
                                     f'platforms/android-{platform_level}')
         if not os.path.exists(rootPlatform):
-            return (False, 'Ndk platform not exist: %s' % rootPlatform)
+            raise Exception('Ndk platform not exist: %s' % rootPlatform)
 
         # $NDK/platforms/android-21/arch-arm
         self.sysroot = os.path.join(rootPlatform,
                                     self.getAndroidPlatformSubfolder(request))
         if not os.path.exists(self.sysroot):
-            return (False, 'Ndk sysroot not exist: %s' % self.sysroot)
+            raise Exception('Ndk sysroot not exist: %s' % self.sysroot)
 
-        stl = self.kwargs.get('stl', 'gnu-libstdc++')
-        self.rootStl = NDKStl(
-                os.path.join(self.root, 'sources/cxx-stl', stl),
+        stl_name = self.kwargs.get('stl', 'gnu-libstdc++')
+        self.stl = NDKStl(
+                os.path.join(self.root, 'sources/cxx-stl', stl_name),
                 arch=self.getCppLibSubfolder(request))
 
         if self.kwargs.get('compiler', 'gcc') == 'gcc':
             gcc = GCC(prefix=os.path.join(rootBin, executablePrefix),
                       suffix=request.host_os.getExecutableSuffix())
-            return True, [gcc]
+            return [gcc]
 
         clang = Clang(prefix=os.path.join(
                 self.root,
                 'toolchains/llvm/prebuilt/windows-x86_64/bin'),
                 suffix=request.host_os.getExecutableSuffix())
-        return True, [clang]
+        return [clang]
 
     def asCmdFilter(self, cmd, kwargs):
         if cmd.name == 'cc' or cmd.name == 'cxx':
@@ -103,13 +103,13 @@ class NDK:
                         'sysroot/usr/include',
                         self.getSysrootIncludeSubfolder(kwargs['request']))
             if cmd.name == 'cxx':
-                cmd.include_dirs += self.rootStl.include_dirs
+                cmd.include_dirs += self.stl.include_dirs
 
         elif cmd.name == 'ld':
             cmd.sysroots += self.sysroot
             cmd.lib_dirs += os.path.join(self.sysroot, 'usr/lib')
             if cmd.name == 'cxx':
-                cmd.lib_dirs += self.rootStl.lib_dirs
+                cmd.lib_dirs += self.stl.lib_dirs
 
     def _search_file(self, filename, paths):
         if not filename:

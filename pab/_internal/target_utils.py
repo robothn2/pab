@@ -86,19 +86,6 @@ class ItemList(list):
             self.remove(s)
 
 
-def parse_target_file(filepath):
-    global_scope = {}
-    local_scope = {}
-    with open(filepath, 'r', encoding='utf-8') as f:
-        content = f.read()
-    try:
-        exec(content, global_scope, local_scope)
-    except SyntaxError as e:
-        print('* Exception occupied in', filepath, e)
-        return []
-    return local_scope.get('export_libs', [])
-
-
 if __name__ == '__main__':
     sources = ItemList('c1.c', 'c2.c', 'c3.c',
                        name='test', base=r'D:\lib\base')

@@ -30,19 +30,16 @@ zlib_lib = {
 }
 
 def zlib_dyn(lib, context):
-    target_cpu = context.target_cpu_tags
-    target_os = context.target_os_tags
-    if 'x86' in target_cpu or 'x64' in target_cpu:
+    if 'x86' in context.target_cpu_tags:
         lib.sources += [
                 'crc_folding.c',
                 'fill_window_sse.c',
                 'x86.c',
                 ]
+        if 'msvc' not in context.compiler_tags:
+            lib.ccflags += ['-msse4.2', '-mpclmul']
     else:
         lib.sources += 'simd_stub.c'
-
-    if 'x86' in target_os and 'msvc' not in context.compiler_tags:
-        lib.ccflags += ['-msse4.2', '-mpclmul']
 
 
 export_libs = [

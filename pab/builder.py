@@ -27,23 +27,19 @@ class Builder:
             cfg = cfg_queue[0]
             cfg_queue = cfg_queue[1:]
 
-            if not hasattr(cfg, 'matchRequest'):
-                # always available
-                self.configs.append(cfg)
-                continue
-
-            r = cfg.matchRequest(self.request)
-            if isinstance(r, bool):
-                if r:
-                    self.configs.append(cfg)
-            elif isinstance(r, tuple):
-                if r[0]:
-                    self.configs.append(cfg)
-                    if isinstance(r[1], list):
-                        cfg_queue += r[1]
-                else:
+            if hasattr(cfg, 'matchRequest'):
+                error_msg = cfg.matchRequest(self.request)
+                if isinstance(error_msg, str):
                     logger.info('Disabled config: {} {}'.format(
-                            cfg.name, r[1]))
+                            cfg.name, error_msg))
+                    continue
+
+            self.configs.append(cfg)
+
+            if hasattr(cfg, 'initByRequest'):
+                addtional_cfgs = cfg.initByRequest(self.request)
+                if isinstance(addtional_cfgs, list):
+                    cfg_queue.extend(addtional_cfgs)
 
         self.configs.append(self.binutils)
 

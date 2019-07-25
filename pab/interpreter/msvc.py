@@ -122,9 +122,6 @@ class MSVC:
     def __str__(self):
         return self.name
 
-    def matchRequest(self, request):
-        return True
-
     def asCmdProvider(self, kwargs):
         return self._cmds.get(kwargs['request'].arch.name, {})
 
@@ -152,18 +149,14 @@ class MSVC:
                       ]
 
             request = kwargs['request']
-            if request.hasMember('debug'):
+            if request.debug:
                 cmd.defines += ['DEBUG', '_DEBUG']
-                if request.hasMember('crt_static'):
-                    flags += '/MTd'  # Multithreaded static debug
-                else:
-                    flags += '/MDd'  # Multithreaded DLL debug
+                # /MTd: Multithreaded static debug
+                # /MDd: Multithreaded DLL debug
+                flags += '/MTd' if request.crt_static else '/MDd'
             else:
                 cmd.defines += 'NDEBUG'
-                if request.hasMember('crt_static'):
-                    flags += '/MT'
-                else:
-                    flags += '/MD'
+                flags += '/MT' if request.crt_static else '/MD'
             #flags += '/Zi' '/PDB:"target.pdb"',
 
             cmd += '/Fo:"%s"' % kwargs['dst']

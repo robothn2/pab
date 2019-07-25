@@ -26,7 +26,7 @@ if __name__ == '__main__':
         logger.addHandler(log_to_file)
 
     compiler = MSVC(ver='14.0', platform='7.1')
-    #compiler = NDK(path='d:/lib/android-ndk-r14b', platform=9, compiler='gcc',
+    #compiler = NDK(path='d:/lib/android-ndk-r14b', platform=21, compiler='gcc',
     #               stl='llvm-libc++')  # 'gnu-libstdc++', 'llvm-libc++'
     request = Request(target_os='win', target_cpu='x64',
                       root_build='D:/build')

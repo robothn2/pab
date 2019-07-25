@@ -10,7 +10,7 @@ libpng_lib = {
         ],
 
     'defines': [
-        "PNG_SET_OPTION_SUPPORTED"
+        'PNG_SET_OPTION_SUPPORTED',
         ],
     'deps': [
         '//third_party/zlib',

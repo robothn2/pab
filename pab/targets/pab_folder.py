@@ -1,7 +1,7 @@
 # coding: utf-8
 
 import os
-from pab._internal.target_utils import parse_target_file
+from pab._internal.target_context import parse_target_file
 from pab._internal.target import Target
 from pab._internal.log import logger
 
@@ -12,11 +12,11 @@ class PabTargets:
         self.completedTargets = {}
 
         root = os.path.realpath(kwargs['root'])
-        kwargs['root'] = root
         assert(os.path.exists(root))
-        self.name = 'PabTargets(%s)' % root
-        self.root = root
+        kwargs['root'] = root
         self.kwargs = kwargs
+        self.root = root
+        self.name = f'PabTargets({root})'
         self._parse_pyfiles(root)
 
     def __str__(self):

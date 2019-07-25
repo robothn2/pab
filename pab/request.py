@@ -15,14 +15,13 @@ class Request:
         self.arch = Arch(kwargs['target_cpu'])
         self.kwargs['target_os_tags'] = self.target_os.tags
         self.kwargs['target_cpu_tags'] = self.arch.tags
+        self.variables = {}
+        self.options = {}
         self.rootBuild = os.path.realpath(kwargs['root_build'])
         if not os.path.exists(self.rootBuild):
             os.makedirs(self.rootBuild)
         logger.info('OSTags: {}'.format(self.target_os.tags))
         logger.info('ArchTags: {}'.format(self.arch.tags))
-
-    def hasMember(self, memberName):
-        return memberName in self.kwargs
 
     def __getattr__(self, name):
         return self.kwargs.get(name)

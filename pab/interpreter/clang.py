@@ -55,9 +55,8 @@ class Clang:
                 'define':       lambda macro, args: f'-D{macro}',
                 }
 
-    def matchRequest(self, request):
+    def initByRequest(self, request):
         self.target_triple = request.target_cpu + '-' + request.target_os.name
-        return True
 
     def asCmdProvider(self, kwargs):
         return self._cmds

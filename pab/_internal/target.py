@@ -25,7 +25,12 @@ class Target:
             init_setting['source_base_dir'] = base
 
         self.request = request
-        self.setting = TargetContext(**init_setting, **request.kwargs, **kwargs)
+        self.setting = TargetContext(
+                request.variables,  # variables from request
+                **init_setting,     # target fixed setting
+                **request.kwargs,   # args from request's constructor
+                **kwargs            # args from PabTargets.build
+                )
         self.uri = self.setting['uri']
         self.type = self.setting.get('type')
         self.name = re.split(r'[./\\]', self.uri)[-1]
