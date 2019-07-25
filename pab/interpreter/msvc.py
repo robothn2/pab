@@ -66,7 +66,7 @@ class WinSDK:
 class MSVC:
     def __init__(self, **kwargs):
         self.name = 'MSVC'
-        self.tags = ('msvc', 'vc')
+        self.tags = ('msvc', 'vc', 'visualc', 'msc')
         self.kwargs = kwargs
         # Get install path of vs2015:
         ver = kwargs.get('ver', '14.0')

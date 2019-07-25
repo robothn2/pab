@@ -41,7 +41,7 @@ def zlib_dyn(lib, context):
     else:
         lib.sources += 'simd_stub.c'
 
-    if 'win' not in target_os or 'clang' in context.compiler_tags:
+    if 'x86' in target_os and 'msvc' not in context.compiler_tags:
         lib.ccflags += ['-msse4.2', '-mpclmul']
 
 

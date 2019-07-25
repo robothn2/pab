@@ -39,7 +39,7 @@ def arch_detect(arch):
 
 _arch_tags = {
     'aarch64': ('arm', 'arm64', 'aarch64', '64bit'),
-    'arm': ('arm', 'armeabi', '32bit'),
+    'arm': ('arm', 'arm32', 'armeabi', '32bit'),
     'x86': ('x86', 'x86_32', 'i386', 'i686', 'intel', '32bit'),
     'x64': ('x86', 'x86_64', 'x64', 'amd64', 'intel', '64bit'),
     'mips': ('mips', 'mipsel', 'mipseb'),
@@ -54,8 +54,8 @@ _arch_tags = {
 class Arch:
     def __init__(self, handy_arch):
         handy_arch = handy_arch.lower() if isinstance(handy_arch, str) else ''
-        self._arch_org = handy_arch
-        self.name = arch_detect(handy_arch)
+        self.arch_org = handy_arch.replace('-', '')
+        self.name = arch_detect(self.arch_org)
         assert(self.name)
         self.tags = _arch_tags.get(self.name, ())
 

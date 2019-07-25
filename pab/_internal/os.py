@@ -52,7 +52,6 @@ class OS:
             self.suffix['staticLib'] = '.a'
         else:
             raise Exception('Unsupported OS', os_name, self.name)
-        print(self.suffix)
 
     def __str__(self):
         return 'OS:' + self.name

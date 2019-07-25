@@ -139,4 +139,5 @@ class PabTargets:
                 cmd.libs += dep.rebasePath(dep.setting.public_libs)
                 if not dep.artifacts:
                     continue
-                cmd.sources += dep.artifacts['link']
+                # msvc link to target.artifacts['link']
+                cmd.sources += dep.artifacts.get('link') or dep.artifacts.get('o')

@@ -55,7 +55,7 @@ class NDK:
         self.cmdFilters = {}
 
     def matchRequest(self, request):
-        if request.target_os != 'android':
+        if 'android' not in request.target_os.tags:
             return (False, 'target_os is not android')
 
         executablePrefix, toolchain_name = self.getToolchainName(request)
@@ -121,17 +121,16 @@ class NDK:
         return None
 
     def getToolchainName(self, request):
-        arch = request.arch
-        executablePrefix = f'{arch}-linux-android-'
-        if arch == 'arm':
+        if 'armeabi' in request.arch.tags:
             toolchain_name = 'arm-linux-androideabi-4.9'
             executablePrefix = 'arm-linux-androideabi-'
-        elif arch == 'arm64':
+        elif 'arm64' in request.arch.tags:
             toolchain_name = 'aarch64-linux-android-4.9'
             executablePrefix = 'aarch64-linux-android-'
-        elif arch == 'x86_64':
+        elif 'x86_64' in request.arch.tags:
             toolchain_name = 'x86_64-4.9'
-        elif arch == 'x86':
+            executablePrefix = 'x86_64-linux-android-'
+        elif 'x86_32' in request.arch.tags:
             toolchain_name = 'x86-4.9'
             executablePrefix = 'i686-linux-android-'
         else:
@@ -141,29 +140,37 @@ class NDK:
 
     # for $NDK/sysroot/usr/include/
     def getAndroidPlatformSubfolder(self, request):
-        return 'arch-' + request.arch
+        if 'arm64' in request.arch.tags:
+            return 'arch-arm64'
+        if 'x64' in request.arch.tags:
+            return 'arch-x86_64'
+        return 'arch-' + request.arch.name
 
     # for $NDK/sysroot/usr/include/
     def getSysrootIncludeSubfolder(self, request):
-        arch = request.arch
-        if arch == 'arm64':
+        arch = request.arch.name
+        if 'arm64' in request.arch.tags:
             return 'aarch64-linux-android'
-        if arch == 'arm':
+        if 'arm32' in request.arch.tags:
             return 'arm-linux-androideabi'
-        if arch == 'x86':
+        if 'x86_32' in request.arch.tags:
             return 'i686-linux-android'
+        if 'x86_64' in request.arch.tags:
+            return 'x86_64-linux-android'
         return arch + '-linux-android'
 
     # for $NDK/sources/cxx-stl/gnu-libstdc++/4.9/libs/
     def getCppLibSubfolder(self, request):
-        arch = request.arch
-        cpu = request.target_cpu
-        if arch == 'arm':
-            if cpu.endswith('v7a'):
+        if 'arm32' in request.arch.tags:
+            if request.arch.arch_org.endswith('v7a'):
                 return 'armeabi-v7a'
             return 'armeabi'
-        if arch == 'arm64':
-            if cpu.endswith('v8a'):
+        if 'arm64' in request.arch.tags:
+            if request.arch.arch_org.endswith('v8a'):
                 return 'arm64-v8a'
             return 'aarch64'
-        return arch
+        if 'x86_32' in request.arch.tags:
+            return 'x86'
+        if 'x86_64' in request.arch.tags:
+            return 'x86_64'
+        return request.arch.name

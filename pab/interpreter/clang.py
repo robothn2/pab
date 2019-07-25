@@ -56,7 +56,7 @@ class Clang:
                 }
 
     def matchRequest(self, request):
-        self.target_triple = request.target_cpu + '-' + request.target_os
+        self.target_triple = request.target_cpu + '-' + request.target_os.name
         return True
 
     def asCmdProvider(self, kwargs):
