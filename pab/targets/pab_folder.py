@@ -85,7 +85,7 @@ class PabTargets:
         for uri_dep in deps:
             depend_tar = self.parsedTargets.get(uri_dep)
             if not depend_tar:
-                raise Exception(f'depend uri({uri_dep}) not found in {uri}')
+                raise Exception(f'dep({uri_dep}) not found for {uri}')
 
             if depend_tar[0]:
                 return False, 0

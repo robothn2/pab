@@ -3,6 +3,7 @@
 import os
 import re
 import shutil
+from pathlib import Path
 from .file_detect import file_detect
 from .target_context import TargetContext
 from .target_utils import ItemList
@@ -79,12 +80,13 @@ class Target:
             cmd.libs += self.setting.libs
 
     def build(self, builder, **kwargs):
-        print('== Target: {}, type: {}, base: {}'.format(
-                self.uri, self.type, self.rootSource))
+        root_obj = Path(self.request.rootBuild)
+        root_obj = root_obj / 'obj' / self.name
+        root_obj.mkdir(parents=True, exist_ok=True)
+        print('== Target: {}, type: {}, base: {}, obj: {}'.format(
+                self.uri, self.type, self.rootSource, root_obj))
         if self.dyn_setting:
             self.dyn_setting(self.setting, self.setting)
-        # logger.debug('Setting apply: ' + str(self.setting))
-
         if not self.isArtifact():
             return
 
@@ -98,9 +100,8 @@ class Target:
             # cache for sub folder creation
             sub_folder = os.path.dirname(file)
             if sub_folder and sub_folder not in created_dst_folders:
-                dst_folder = os.path.join(self.request.rootBuild, sub_folder)
-                if not os.path.exists(dst_folder):
-                    os.makedirs(dst_folder)
+                dst_folder = root_obj / sub_folder
+                dst_folder.mkdir(parents=True, exist_ok=True)
                 created_dst_folders.append(sub_folder)
 
             src = os.path.realpath(os.path.join(self.rootSource, file))
@@ -115,9 +116,9 @@ class Target:
                 builder.results.skipped(file, reason)
                 continue
 
-            dst = os.path.join(self.request.rootBuild, file) + '.o'
+            dst = root_obj / (file + '.o')
             builder.poolCommand(
-                        detected.cmd, file=file, sources=src, dst=dst,
+                        detected.cmd, file=file, sources=src, dst=str(dst),
                         build_title=file, target=self, **kwargs)
 
         for cmd in builder.waitPoolComplete():

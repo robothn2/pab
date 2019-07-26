@@ -4,12 +4,12 @@ libpng_lib = {
     'uri': '//third_party/libpng',
     'type': 'sharedLib',
     'source_base_dir': 'third_party/libpng',
-    'public_include_dirs': [
-        ".",
-        "libpng",
-        ],
+
+    'public_defines': ['PNG_USE_DLL', 'PNG_DLL_IMPORT'],
+    'public_include_dirs': ['.', 'libpng'],
 
     'defines': [
+        'PNG_USE_DLL',
         'PNG_SET_OPTION_SUPPORTED',
         ],
     'deps': [
