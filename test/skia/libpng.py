@@ -9,8 +9,7 @@ libpng_lib = {
     'public_include_dirs': ['.', 'libpng'],
 
     'defines': [
-        'PNG_USE_DLL',
-        'PNG_SET_OPTION_SUPPORTED',
+        'PNG_IMPEXP=PNG_DLL_EXPORT',
         ],
     'deps': [
         '//third_party/zlib',
@@ -35,11 +34,18 @@ libpng_lib = {
 }
 
 
-def libpng_dyn(lib, context):
-    target_os = context.target_os_tags
-    if 'android' in target_os:
-        lib.defines += []
-        lib.sources += []
+def libpng_dyn(lib, ctx):
+    if 'x86' in ctx.target_cpu_tags:
+        lib.defines += 'PNG_INTEL_SSE'
+        lib.sources += [
+                'contrib/intel/filter_sse2_intrinsics.c',
+                'contrib/intel/intel_init.c',
+                ]
+    elif 'arm' in ctx.target_os_tags:
+        lib.sources += [
+                'arm/arm_init.c',
+                'arm/filter_neon_intrinsics.c',
+                ]
 
 
 export_libs = [
