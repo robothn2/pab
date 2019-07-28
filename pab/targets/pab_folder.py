@@ -1,6 +1,6 @@
 # coding: utf-8
-
 import os
+from collections import deque
 from pab._internal.target_context import parse_target_file
 from pab._internal.target import Target
 from pab._internal.log import logger
@@ -11,13 +11,12 @@ class PabTargets:
         self.parsedTargets = {}
         self.completedTargets = {}
 
-        root = os.path.realpath(kwargs['root'])
-        assert(os.path.exists(root))
-        kwargs['root'] = root
+        root_script = os.path.realpath(kwargs['root_script'])
+        assert(os.path.exists(root_script))
+        kwargs['root_script'] = root_script
         self.kwargs = kwargs
-        self.root = root
-        self.name = f'PabTargets({root})'
-        self._parse_pyfiles(root)
+        self.name = f'PabTargets({root_script})'
+        self._parse_pyfiles(root_script)
 
     def __str__(self):
         return self.name
@@ -41,11 +40,12 @@ class PabTargets:
         for parsed in parsed_targets:
             assert(isinstance(parsed, tuple))
             uri = parsed[0]['uri']
-            # [pending, depend_level, target]
+            # [is_pending, depend_level, target]
             self.parsedTargets[uri] = [True, 0, parsed]
 
-    def _sort_targets_by_deps(self, kwargs):
+    def _sort_targets_by_deps(self):
         round_cnt = 0
+        logger.debug('Targets sort: totally {}'.format(len(self.parsedTargets)))
         while True:
             found_pending = False
             for uri, entry in self.parsedTargets.items():
@@ -63,11 +63,11 @@ class PabTargets:
                 if not result:
                     continue
 
-                logger.debug(f'round {round_cnt}: {uri} all resolved')
+                logger.debug(f'Targets sort: round {round_cnt} - {uri} all resolved')
                 entry[0] = False  # all deps & configs resolved
                 entry[1] = max(level_deps, level_cfgs) + 1
             if not found_pending:
-                logger.debug(f'round {round_cnt}: no more pending')
+                logger.debug(f'Targets sort: round {round_cnt} - no more pending')
                 break  # no more
             round_cnt += 1
 
@@ -88,13 +88,37 @@ class PabTargets:
                 raise Exception(f'dep({uri_dep}) not found for {uri}')
 
             if depend_tar[0]:
-                return False, 0
+                return False, 0  # still pending
             max_level = max(max_level, depend_tar[1])
         return True, max_level
 
-    def build(self, request, builder, **kwargs):
-        sortedTars = self._sort_targets_by_deps(kwargs)
+    def _remove_unwanted_targets(self):
+        target_name = self.kwargs.get('target_name')
+        if not target_name:
+            return
+        self.kwargs.pop('target_name')
 
+        wanted_tars = {}
+        q = deque()
+        q.append(target_name)
+        while q:
+            name = q.popleft()
+            tar = self.parsedTargets[name]
+            wanted_tars[name] = tar
+
+            for dep in tar[2][0].get('deps', []):
+                assert(isinstance(dep, str))
+                if dep not in wanted_tars:
+                    q.append(dep)
+
+        if len(self.parsedTargets) > len(wanted_tars):
+            print('Removed', len(self.parsedTargets) - len(wanted_tars),
+                  'unwanted targets')
+            self.parsedTargets = wanted_tars
+
+    def build(self, request, builder, **kwargs):
+        self._remove_unwanted_targets()
+        sortedTars = self._sort_targets_by_deps()
         logger.info('= Build: ' + self.name)
         for tar in sortedTars:
             target = Target(tar, request,

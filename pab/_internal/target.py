@@ -20,7 +20,8 @@ class Target:
             self.dyn_setting = None
         base = init_setting.get('source_base_dir')
         if not os.path.isabs(base):
-            root_base = kwargs.get('root_source') or kwargs.get('root')
+            # if no root_source, using root_script
+            root_base = kwargs.get('root_source') or kwargs.get('root_script')
             assert(root_base)
             base = os.path.realpath(os.path.join(root_base, base))
             init_setting['source_base_dir'] = base

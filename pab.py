@@ -31,4 +31,7 @@ if __name__ == '__main__':
     request = Request(target_os='win', target_cpu='x64',
                       root_build='D:/build')
     builder = Builder(request, compiler, dryrun=False, job=10)
-    builder.build(PabTargets(root='test/skia', root_source='d:/src/pca_infra/thirdparty-source/skia'))
+    builder.build(PabTargets(root_script='test/skia',
+                             root_source='d:/src/pca_infra/thirdparty-source/skia',
+                             target_name='//third_party/libpng',
+                             ))
